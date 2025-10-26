@@ -18,12 +18,36 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await loginApi(form);
-      login(res.data.user, res.data.token);
-      navigate('/');
+      const { user, token } = res.data;
+
+      localStorage.setItem("access_token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      login(user, token);
+
+      // Điều hướng theo vai trò
+      switch (user.role) {
+        case "PATIENT":
+          navigate("/home");
+          break;
+        case "RECEPTIONIST":
+          navigate("/reception/dashboard");
+          break;
+        case "DOCTOR":
+          navigate("/doctor/dashboard");
+          break;
+        case "OWNER":
+        case "ADMIN":
+          navigate("/admin/dashboard");
+          break;
+        default:
+          navigate("/home");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại');
+      setError(err.response?.data?.message || "Đăng nhập thất bại");
     }
   };
+
 
   return (
     <div className="flex min-h-screen bg-blue-600">
