@@ -28,7 +28,7 @@ const LoginPage = () => {
       // Điều hướng theo vai trò
       switch (user.role) {
         case "PATIENT":
-          navigate("/patient/home");
+          navigate("/home");
           break;
         case "RECEPTIONIST":
           navigate("/receptionist/home");
