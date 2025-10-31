@@ -31,7 +31,7 @@ const LoginPage = () => {
           navigate("/home");
           break;
         case "RECEPTIONIST":
-          navigate("/reception/dashboard");
+          navigate("/receptionist/home");
           break;
         case "DOCTOR":
           navigate("/doctor/dashboard");

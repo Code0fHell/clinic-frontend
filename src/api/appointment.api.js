@@ -29,3 +29,9 @@ export const guestBookAppointment = async (dto) => {
   const res = await axiosClient.post("/appointment/guest-book", dto);
   return res.data;
 };
+
+// Lấy tất cả lịch đã đặt của ngày hôm nay (receptionist)
+export const getAppointmentToday = async () => {
+  const res = await axiosClient.get("/appointment/today");
+  return res.data;
+}
