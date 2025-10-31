@@ -9,6 +9,12 @@ import DoctorDashBoardPage from './pages/doctor/DoctorDashBoardPage'
 import MakeAppointmentPage from './pages/appointment/MakeAppointmentPage';
 import DoctorAppointmentsPage from './pages/doctor/DoctorAppointmentPage';
 import DoctorVisitPage from './pages/doctor/DoctorVisitPage';
+import ReceptionistDashboard from './pages/receptionist/Dashboard';
+import AppointmentPage from './pages/receptionist/Appointment';
+import PatientPage from './pages/receptionist/Patient';
+import InvoicePage from './pages/receptionist/Invoice';
+import TaskPage from './pages/receptionist/Task';
+import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
   return (
@@ -22,6 +28,16 @@ function App() {
           <Route path='/doctor/dashboard' element={<DoctorDashBoardPage/>}/>
           <Route path='/doctor/appointment' element={<DoctorAppointmentsPage/>}/>
           <Route path='/doctor/visit' element={<DoctorVisitPage/>}/>
+
+          {/* Protected routes */}
+          <Route element={<PrivateRoute />}>
+            <Route path="/receptionist/home" element={<ReceptionistDashboard />} />
+            <Route path="/receptionist/appointment" element={<AppointmentPage />} />
+            <Route path="/receptionist/patient" element={<PatientPage />} />
+            <Route path="/receptionist/invoice" element={<InvoicePage />} />
+            <Route path="/receptionist/task" element={<TaskPage />} />
+          </Route>
+
           {/* Main app routes */}
           <Route path="/*" element={<AppRouter />} />
           {/* Redirect unknown routes */}
