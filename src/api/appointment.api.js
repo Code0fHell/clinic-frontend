@@ -29,3 +29,29 @@ export const guestBookAppointment = async (dto) => {
   const res = await axiosClient.post("/appointment/guest-book", dto);
   return res.data;
 };
+
+// Lấy danh sách lịch hẹn hôm nay
+export const getTodayAppointments = async () => {
+  const res = await axiosClient.get("/appointment/today");
+  return res.data;
+};
+
+// Lấy tất cả lịch hẹn
+export const getAllAppointments = async () => {
+  const res = await axiosClient.get("/appointment/all");
+  return res.data;
+};
+
+// Lấy lịch hẹn trong tuần
+export const getAppointmentsThisWeek = async () => {
+  const res = await axiosClient.get("/appointment/week");
+  return res.data;
+};
+
+export const updateAppointmentStatus = async (appointmentId, newStatus) => {
+  const res = await axiosClient.put(`/appointment/${appointmentId}/status`, {
+    appointment_status: newStatus,
+  });
+  return res.data;
+};
+
