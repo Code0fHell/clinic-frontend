@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import CreateVisitForm from "./components/CreateVisitForm";
-import { getAppointmentToday } from "../../api/appointment.api";
+import { getTodayAppointments } from "../../api/appointment.api";
 import { createVisit } from "../../api/visit.api";
 
 export default function Appointment() {
@@ -17,7 +17,7 @@ export default function Appointment() {
         const fetchAppointments = async () => {
             try {
                 setLoading(true);
-                const res = await getAppointmentToday(); // gọi API
+                const res = await getTodayAppointments(); // gọi API
                 if (Array.isArray(res)) {
                     setAppointments(res);
                 } else if (res?.data) {
@@ -36,7 +36,8 @@ export default function Appointment() {
     }, []);
 
     const handleCreateVisit = (dataVisit) => {
-        console.log("📋 Dữ liệu visit được tạo:", dataVisit);
+        // Gọi API tạo phiếu thăm khám
+        createVisit(dataVisit);
         setShowForm(false);
         setSelectedAppointment(null);
     };
