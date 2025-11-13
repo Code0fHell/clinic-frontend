@@ -45,7 +45,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                 formData.bill_type === "SERVICE" ? formData.indication_ticket_id : null,
             prescription_id:
                 formData.bill_type === "MEDICINE" ? formData.prescription_id : null,
-            // total: formData.total || 0,
+            total: formData.total || 0
         };
 
         console.log("Payload gửi BE:", payload);
