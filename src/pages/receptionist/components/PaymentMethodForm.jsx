@@ -1,29 +1,31 @@
 import React, { useState } from "react";
 
-export default function PaymentMethodForm({ invoice, onSubmit, onClose }) {
+export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
     const [method, setMethod] = useState("CASH");
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const payload = {
-            invoice_id: invoice?.id,
-            method, // Hình thức thanh toán
+
+        // Gửi DTO BE yêu cầu
+        const dto = {
+            bill_id: bill?.id,
+            amount: Number(bill?.total),
         };
-        console.log("💳 Thanh toán:", payload);
-        onSubmit?.(payload);
+
+        onSubmit?.({ dto, method });
     };
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
             <div
-                className="bg-white w-[500px] rounded-2xl shadow-lg p-8 relative"
+                className="bg-white w-[700px] rounded-2xl shadow-lg p-8 relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Nút đóng */}
                 <button
                     onClick={onClose}
                     type="button"
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors p-1 rounded-full hover:bg-gray-100"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
                 >
                     <svg
                         className="w-6 h-6"
@@ -40,36 +42,54 @@ export default function PaymentMethodForm({ invoice, onSubmit, onClose }) {
                     </svg>
                 </button>
 
-                <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                    Chọn hình thức thanh toán
+                <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
+                    Thanh toán hóa đơn
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-1">
-                            Hình thức thanh toán
-                        </label>
-                        <select
-                            value={method}
-                            onChange={(e) => setMethod(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                        >
-                            <option value="CASH">💵 Tiền mặt</option>
-                            <option value="TRANSFER">🏦 Chuyển khoản</option>
-                        </select>
+                    {/* Tổng tiền + hình thức thanh toán */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-4">
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-1">
+                                Tổng tiền cần thanh toán
+                            </label>
+                            <p className="text-xl font-semibold text-gray-600">
+                                {bill?.total
+                                    ? Number(bill.total).toLocaleString("vi-VN", {
+                                        style: "currency",
+                                        currency: "VND",
+                                    })
+                                    : "0 ₫"}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-1">
+                                Hình thức thanh toán
+                            </label>
+                            <select
+                                value={method}
+                                onChange={(e) => setMethod(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#008080] outline-none"
+                            >
+                                <option value="CASH">💵 Tiền mặt</option>
+                                <option value="BANK_TRANSFER">🏦 Chuyển khoản</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div className="flex justify-end space-x-3 pt-4">
+                    {/* Nút hành động */}
+                    <div className="flex justify-end space-x-3 pt-2">
                         <button
                             type="submit"
-                            className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition cursor-pointer"
+                            className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
                         >
                             Xác nhận
                         </button>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition cursor-pointer"
+                            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
                         >
                             Hủy
                         </button>
