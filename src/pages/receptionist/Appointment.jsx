@@ -35,9 +35,9 @@ export default function Appointment() {
         fetchAppointments();
     }, []);
 
-    const handleCreateVisit = (dataVisit) => {
-        // Gọi API tạo phiếu thăm khám
-        createVisit(dataVisit);
+    const handleCreateVisit = async (dataVisit) => {
+        console.log("Dữ liệu visit được tạo:", dataVisit);
+        const res = await createVisit(dataVisit);
         setShowForm(false);
         setSelectedAppointment(null);
     };
@@ -156,11 +156,11 @@ export default function Appointment() {
                                     <table className="min-w-full text-center border-collapse">
                                         <thead className="bg-gray-100 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-6 py-4 text-2xl font-bold text-gray-700">Tên bệnh nhân</th>
-                                                <th className="px-6 py-4 text-2xl font-bold text-gray-700">Bác sĩ</th>
-                                                <th className="px-6 py-4 text-2xl font-bold text-gray-700">Thời gian</th>
-                                                <th className="px-6 py-4 text-2xl font-bold text-gray-700">Lý do</th>
-                                                <th className="px-6 py-4 text-2xl font-bold text-gray-700">Hành động</th>
+                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Tên bệnh nhân</th>
+                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Bác sĩ</th>
+                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Thời gian</th>
+                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Lý do</th>
+                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Hành động</th>
                                             </tr>
                                         </thead>
 
@@ -168,37 +168,43 @@ export default function Appointment() {
                                             {paginatedData.length > 0 ? (
                                                 paginatedData.map((item) => (
                                                     <tr key={item.id} className="hover:bg-gray-50 transition duration-200">
-                                                        <td className="px-8 py-5 text-xl text-gray-700">
+                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
                                                             {item.patient?.user.full_name || "Chưa có tên"}
                                                         </td>
-                                                        <td className="px-8 py-5 text-xl text-gray-700">
+                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
                                                             {item.doctor?.user.full_name || "Không rõ"}
                                                         </td>
-                                                        <td className="px-8 py-5 text-xl text-gray-700">
+                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
                                                             {formatDateTime(item.scheduled_date)}{" "}
                                                             <span className="text-gray-500 text-base italic">
                                                                 ({item.session === "MORNING" ? "Sáng" : "Chiều"})
                                                             </span>
                                                         </td>
 
-                                                        <td className="px-8 py-5 text-xl text-gray-700">
+                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
                                                             {item.reason || "—"}
                                                         </td>
                                                         <td>
-                                                            <button
-                                                                onClick={() =>
-                                                                    setSelectedAppointment({
-                                                                        ...item,
-                                                                        patient_name: item.patient?.user?.full_name || "Không rõ",
-                                                                        doctor_name: item.doctor?.user?.full_name || "Không rõ",
-                                                                        patient_id: item.patient?.id,
-                                                                        doctor_id: item.doctor?.id,
-                                                                    })
-                                                                }
-                                                                className="bg-[#008080] hover:bg-teal-600 cursor-pointer text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-md text-base"
-                                                            >
-                                                                Thêm vào thăm khám
-                                                            </button>
+                                                            {item.status !== 'pending' ? (
+                                                                <button
+                                                                    onClick={() =>
+                                                                        setSelectedAppointment({
+                                                                            ...item,
+                                                                            patient_name: item.patient?.user?.full_name || "Không rõ",
+                                                                            doctor_name: item.doctor?.user?.full_name || "Không rõ",
+                                                                            patient_id: item.patient?.id,
+                                                                            doctor_id: item.doctor?.id,
+                                                                            appointment_id: item.id, // thêm dòng này
+                                                                        })
+                                                                    }
+                                                                    className="bg-[#008080] hover:bg-teal-600 cursor-pointer text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-md text-base"
+                                                                >
+                                                                    Thêm vào thăm khám
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-gray-500 font-medium">Đã thêm vào thăm khám</span>
+                                                            )}
+
 
                                                         </td>
 
