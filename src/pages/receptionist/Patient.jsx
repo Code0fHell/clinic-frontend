@@ -11,6 +11,7 @@ import CreateInvoiceForm from "./components/CreateInvoiceForm";
 import PaymentMethodForm from "./components/PaymentMethodForm";
 import { createMedicalTicket } from "../../api/medical-ticket.api";
 import { createBill } from "../../api/bill.api";
+import { paymentCash } from "../../api/payment.api";
 
 export default function Patient() {
     const [openMenuIndex, setOpenMenuIndex] = useState(null);
@@ -795,18 +796,9 @@ export default function Patient() {
                         try {
                             // Gọi API tạo hóa đơn
                             const res = await createBill(payload);
-                            console.log("Dữ liệu trả về:", JSON.stringify(res));
+                            // console.log("Dữ liệu trả về:", JSON.stringify(res));
 
-                            const fakeInvoice = {
-                                id: "HD123",
-                                ...payload,
-                                patient: selectedVisit.patient,
-                                doctor: selectedVisit.doctor,
-                                medicalTicketId: selectedVisit.medicalTicketId,
-                                created_by: selectedVisit.creator,
-                            }; // Demo tạm
-                            setCreatedInvoice(fakeInvoice);
-
+                            setCreatedInvoice(res);
                             setShowCreateInvoiceForm(false);
                             setShowPaymentMethodForm(true);
                         } catch (error) {
@@ -819,24 +811,34 @@ export default function Patient() {
             )}
 
             {/* Form Payment */}
-            {showPaymentMethodForm && createdInvoice && createPortal(
-                <PaymentMethodForm
-                    invoice={createdInvoice}
-                    onSubmit={async (paymentData) => {
-                        try {
-                            // Gọi API thanh toán
-                            console.log("📤 Gửi dữ liệu thanh toán:", paymentData);
-                            // await api.post("/payments", paymentData);
-                            alert("Thanh toán thành công!");
-                            setShowPaymentMethodForm(false);
-                        } catch (error) {
-                            alert("Lỗi thanh toán: " + error.message);
-                        }
-                    }}
-                    onClose={() => setShowPaymentMethodForm(false)}
-                />,
-                document.body
-            )}
+            {showPaymentMethodForm && createdInvoice &&
+                createPortal(
+                    <PaymentMethodForm
+                        bill={createdInvoice}
+                        onSubmit={async ({ dto, method }) => {
+                            try {
+                                if (method === "CASH") {
+                                    // Gọi API thanh toán tiền mặt
+                                    const res = await paymentCash(dto);
+                                    console.log("Thanh toán tiền mặt thành công!", res);
+                                }
+                                else if (method === "BANK_TRANSFER") {
+                                    // Gọi API thanh toán chuyển khoản
+                                    // const res = await paymentBank(dto); // hoặc api.post("/payments/bank-transfer", dto)
+                                    // console.log("Yêu cầu chuyển khoản thành công!", res);
+                                }
+
+                                setShowPaymentMethodForm(false);
+                            } catch (error) {
+                                console.error("Lỗi thanh toán:", error);
+                                alert("Lỗi thanh toán: " + (error.response?.data?.message || error.message));
+                            }
+                        }}
+                        onClose={() => setShowPaymentMethodForm(false)}
+                    />,
+                    document.body
+                )
+            }
 
         </div>
     );
