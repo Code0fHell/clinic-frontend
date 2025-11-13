@@ -6,9 +6,9 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
         patient_address: "",
         patient_phone: "",
         patient_dob: "",
-        patient_gender: "MALE",
-        father_or_mother_name: "",
-        father_or_mother_phone: "",
+        patient_gender: "NAM",
+        fatherORmother_name: "",
+        fatherORmother_phone: "",
         height: "",
         weight: "",
         blood_type: "",
@@ -45,9 +45,15 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!validate()) return;
-        if (onSubmit) onSubmit(formData);
-    };
 
+        // Convert các chuỗi trống thành undefined
+        const cleanedData = {};
+        Object.keys(formData).forEach((key) => {
+            cleanedData[key] = formData[key] === "" ? undefined : formData[key];
+        });
+
+        if (onSubmit) onSubmit(cleanedData);
+    };
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
@@ -89,7 +95,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                         {/* Họ và tên */}
                         <div>
                             <label className="block text-gray-700 font-medium mb-1">
-                                Họ và tên <span className="text-red-500">*</span>
+                                Họ & tên <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -141,8 +147,9 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
                             >
-                                <option value="MALE">Nam</option>
-                                <option value="FEMALE">Nữ</option>
+                                <option value="NAM">Nam</option>
+                                <option value="NU">Nữ</option>
+                                <option value="KHAC">Khác</option>
                             </select>
                         </div>
 
@@ -191,17 +198,17 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                     {/* Cột phải: Thông tin gia đình & y tế */}
                     <div className="space-y-4 pl-4">
                         <h3 className="text-lg font-semibold text-teal-700 border-b border-gray-200 pb-1">
-                            Thông tin gia đình & y tế
+                            Thông tin gia đình & sức khỏe
                         </h3>
 
                         <div>
                             <label className="block text-gray-700 font-medium mb-1">
-                                Họ và tên bố / mẹ
+                                Họ & tên bố / mẹ
                             </label>
                             <input
                                 type="text"
-                                name="guardian_name"
-                                value={formData.father_or_mother_name}
+                                name="fatherORmother_name"
+                                value={formData.fatherORmother_name}
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
                             />
@@ -213,8 +220,8 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                             </label>
                             <input
                                 type="tel"
-                                name="guardian_phone"
-                                value={formData.father_or_mother_phone}
+                                name="fatherORmother_phone"
+                                value={formData.fatherORmother_phone}
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
                             />
