@@ -5,9 +5,11 @@ import {
 } from "../../../../api/visit.api";
 import { updateAppointmentStatus } from "../../../../api/appointment.api";
 import dayjs from "dayjs";
+import { formatUTCTime } from "../../../../utils/dateUtils";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import CreateIndicationPage from "../../../indication/CreateIndicationPage";
 import PrescriptionPage from "../../../prescription/PrescriptionPage";
+import PatientHistoryDrawer from "../history/PatientHistoryDrawer";
 
 const columns = [
     { label: "Giờ", key: "time", className: "w-[8%] text-center" },
@@ -32,7 +34,10 @@ const TodayVisitQueue = () => {
     const [selectedPatient, setSelectedPatient] = useState();
     const [selectedPrescriptionVisit, setSelectedPrescriptionVisit] =
         useState(null);
+    const [historyPatientId, setHistoryPatientId] = useState(null);
     const tableRef = useRef(null);
+
+    console.log("queue", queue);
 
     const fetchQueue = async () => {
         try {
@@ -107,20 +112,18 @@ const TodayVisitQueue = () => {
                 </button>
             </div>
 
-            {/* Table */}
+            {/* Table Wrapper */}
             <div
                 ref={tableRef}
-                className="overflow-x-auto bg-white rounded-xl shadow-md border border-gray-100 relative"
+                className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200 relative"
             >
-                <table className="w-full text-sm text-gray-700 border-collapse table-fixed">
+                <table className="w-full text-[15px] text-gray-700 border-collapse">
                     <thead>
-                        <tr className="bg-gray-100 border-b">
+                        <tr className="bg-gray-100 border-b border-gray-200">
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
-                                    className={`py-3 px-4 font-semibold text-gray-800 text-left ${
-                                        col.className || ""
-                                    }`}
+                                    className={`py-4 px-4 font-semibold text-gray-700 text-left ${col.className}`}
                                 >
                                     {col.label}
                                 </th>
@@ -132,65 +135,68 @@ const TodayVisitQueue = () => {
                         {queue.length > 0 ? (
                             queue.map((v) => {
                                 const patient = v.patient || {};
-                                console.log("patient", patient);
                                 const time = v.appointment
-                                    ? dayjs(
-                                          v.appointment.scheduled_date
-                                      ).format("HH:mm")
+                                    ? formatUTCTime(v.appointment.scheduled_date)
                                     : "--";
+
                                 const gender =
-                                    patient.gender === "MALE"
+                                    patient.patient_gender === "NAM"
                                         ? "Nam"
-                                        : patient.gender === "FEMALE"
+                                        : patient.patient_gender === "NU"
                                         ? "Nữ"
                                         : "";
+
                                 const dob = patient.patient_dob
                                     ? dayjs(patient.patient_dob).format("YYYY")
                                     : "";
+
                                 const reason =
-                                    v.appointment?.reason ||
-                                    v.visit_type ||
-                                    "--";
+                                    v.appointment?.reason || v.visit_type || "--";
+
                                 const status = statusMap[v.visit_status] || {
                                     label: v.visit_status,
-                                    color: "",
+                                    color: "bg-gray-100 text-gray-600",
                                 };
 
                                 return (
                                     <tr
                                         key={v.id}
-                                        className="border-b hover:bg-blue-50 transition"
+                                        className="border-b border-gray-100 hover:bg-gray-50 transition"
                                     >
-                                        <td className="py-2 px-3 text-center font-medium text-gray-800">
+                                        <td className="py-3 px-4 text-center font-medium text-gray-800">
                                             {time}
                                         </td>
-                                        <td className="py-2 px-3 font-semibold text-gray-900 truncate">
+
+                                        <td className="py-3 px-4 font-semibold text-gray-900 truncate">
                                             {patient.patient_full_name}
                                         </td>
-                                        <td className="py-2 px-3 text-center">
+
+                                        <td className="py-3 px-4 text-center">
                                             {gender}
                                         </td>
-                                        <td className="py-2 px-3 text-center">
+
+                                        <td className="py-3 px-4 text-center">
                                             {dob}
                                         </td>
-                                        <td className="py-2 px-3 truncate">
+
+                                        <td className="py-3 px-4 truncate">
                                             {reason}
                                         </td>
-                                        <td className="py-2 px-3 text-center">
+
+                                        <td className="py-3 px-4 text-center">
                                             <span
-                                                className={`px-2 py-1 rounded text-xs font-medium ${status.color}`}
+                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${status.color}`}
                                             >
                                                 {status.label}
                                             </span>
                                         </td>
-                                        <td className="py-2 px-3 text-center relative">
+
+                                        <td className="py-3 px-4 text-center relative">
                                             <button
-                                                onClick={(e) =>
-                                                    handleOpenMenu(e, v.id)
-                                                }
-                                                className="p-1 hover:bg-gray-100 rounded"
+                                                onClick={(e) => handleOpenMenu(e, v.id)}
+                                                className="p-2 rounded-md hover:bg-gray-100 transition"
                                             >
-                                                <ChevronDownIcon className="w-5 h-5" />
+                                                <ChevronDownIcon className="w-5 h-5 text-gray-700" />
                                             </button>
                                         </td>
                                     </tr>
@@ -200,16 +206,16 @@ const TodayVisitQueue = () => {
                             <tr>
                                 <td
                                     colSpan={columns.length}
-                                    className="py-6 text-center text-gray-400"
+                                    className="py-8 text-center text-gray-500"
                                 >
-                                    Không có bệnh nhân trong hàng chờ hôm nay
+                                    Không có bệnh nhân nào trong hàng chờ hôm nay.
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
 
-                {/* Dropdown menu (hiển thị nổi, không đẩy bảng) */}
+                {/* Dropdown floating menu */}
                 {openAction && (
                     <div
                         style={{
@@ -217,46 +223,60 @@ const TodayVisitQueue = () => {
                             top: `${menuPosition.y}px`,
                             left: `${menuPosition.x}px`,
                         }}
-                        className="w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] animate-fadeIn"
+                        className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] animate-fadeIn"
                     >
                         <button
                             onClick={() => {
                                 const visit = queue.find(
                                     (item) => item.id === openAction
                                 );
+                                if (visit?.patient?.id) {
+                                    setHistoryPatientId(visit.patient.id);
+                                }
+                                setOpenAction(null);
+                            }}
+                            className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50"
+                        >
+                            🗂️ Xem hồ sơ
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                const visit = queue.find((item) => item.id === openAction);
                                 setSelectedPatient(visit);
                                 setOpenAction(null);
                             }}
-                            className="block w-full px-4 py-2 text-left hover:bg-blue-50 text-gray-700"
+                            className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50"
                         >
                             🧾 Tạo phiếu chỉ định
                         </button>
+
                         <button
                             onClick={() => {
-                                const visit = queue.find(
-                                    (item) => item.id === openAction
-                                );
+                                const visit = queue.find((item) => item.id === openAction);
                                 setSelectedPrescriptionVisit(visit);
                                 setOpenAction(null);
                             }}
-                            className="block w-full px-4 py-2 text-left hover:bg-blue-50 text-gray-700"
+                            className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50"
                         >
-                            💊 Kê đơn
+                            💊 Kê đơn thuốc
                         </button>
-                        {queue.find((v) => v.id === openAction)
-                            ?.visit_status === "CHECKED_IN" && (
+
+                        {queue.find((v) => v.id === openAction)?.visit_status ===
+                            "CHECKED_IN" && (
                             <button
                                 onClick={() => {
                                     handleStartVisit(openAction);
                                     setOpenAction(null);
                                 }}
-                                className="block w-full px-4 py-2 text-left hover:bg-blue-50 text-blue-600 font-medium"
+                                className="block w-full px-4 py-2 text-left text-blue-600 font-medium hover:bg-gray-50"
                             >
                                 ▶️ Bắt đầu khám
                             </button>
                         )}
-                        {queue.find((v) => v.id === openAction)
-                            ?.visit_status === "DOING" && (
+
+                        {queue.find((v) => v.id === openAction)?.visit_status ===
+                            "DOING" && (
                             <button
                                 onClick={() => {
                                     const visit = queue.find(
@@ -268,29 +288,42 @@ const TodayVisitQueue = () => {
                                     );
                                     setOpenAction(null);
                                 }}
-                                className="block w-full px-4 py-2 text-left hover:bg-blue-50 text-green-600 font-medium"
+                                className="block w-full px-4 py-2 text-left text-green-600 font-medium hover:bg-gray-50"
                             >
-                                ✅ Đã khám xong
+                                ✅ Hoàn tất khám
                             </button>
                         )}
                     </div>
                 )}
             </div>
 
+
             {/* Modal tạo phiếu chỉ định */}
             {selectedPatient && (
-                <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-                    <div className="relative bg-white rounded-xl shadow-lg p-6 max-w-3xl w-full">
-                        <CreateIndicationPage visit={selectedPatient} />
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+                <div className="relative bg-white w-full max-w-3xl max-h-[90vh] rounded-xl shadow-xl overflow-hidden">
+
+                    {/* Header cố định */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
+                        <h2 className="text-xl font-semibold text-gray-700">
+                            Tạo Phiếu Chỉ Định
+                        </h2>
                         <button
-                            className="absolute top-2 right-4 text-2xl font-bold text-gray-500 hover:text-gray-700"
+                            className="text-2xl font-bold text-gray-500 hover:text-gray-700"
                             onClick={() => setSelectedPatient(null)}
                         >
                             ×
                         </button>
                     </div>
+
+                    {/* Nội dung scroll */}
+                    <div className="overflow-y-auto max-h-[78vh] p-6">
+                        <CreateIndicationPage visit={selectedPatient} />
+                    </div>
                 </div>
-            )}
+            </div>
+        )}
+
 
             {/* Modal kê đơn thuốc */}
             {selectedPrescriptionVisit && (
@@ -305,6 +338,13 @@ const TodayVisitQueue = () => {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {historyPatientId && (
+                <PatientHistoryDrawer
+                    patientId={historyPatientId}
+                    onClose={() => setHistoryPatientId(null)}
+                />
             )}
         </div>
     );

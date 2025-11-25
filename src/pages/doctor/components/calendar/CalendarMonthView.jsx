@@ -1,5 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
+import { parseUTCDate, isSameDayUTC, formatUTCTime } from "../../../../utils/dateUtils";
 
 const weekdays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
@@ -21,7 +22,7 @@ const CalendarMonthView = ({ appointments, current }) => {
   const getAppointmentsByDate = (date) =>
     appointments.filter((a) => {
       if (!a.scheduled_date) return false;
-      return dayjs(a.scheduled_date).isSame(date, "day");
+      return isSameDayUTC(a.scheduled_date, date);
     });
 
   return (
@@ -55,8 +56,8 @@ const CalendarMonthView = ({ appointments, current }) => {
                   <div className="text-[11px] font-semibold mb-1">{date.date()}</div>
                   <div className="flex flex-col gap-1">
                     {appts.slice(0, 3).map((a) => {
-                      const start = dayjs(a.scheduled_date);
-                      const end = dayjs(a.scheduled_date).add(a.duration || 30, "minute");
+                      const startUTC = parseUTCDate(a.scheduled_date);
+                      const endUTC = startUTC.add(a.duration || 30, "minute");
                       const color =
                         a.status === "CHECKED_IN"
                           ? "bg-green-500"
@@ -74,7 +75,7 @@ const CalendarMonthView = ({ appointments, current }) => {
                             {a.patient?.patient_full_name || "N/A"}
                           </div>
                           <div className="text-[9px]">
-                            {start.format("HH:mm")} - {end.format("HH:mm")}
+                            {formatUTCTime(startUTC)} - {formatUTCTime(endUTC)}
                           </div>
                         </div>
                       );

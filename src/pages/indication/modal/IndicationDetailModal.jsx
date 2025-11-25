@@ -1,13 +1,26 @@
 import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import Barcode from "react-barcode";
 
 const IndicationDetailModal = ({ ticket, onClose }) => {
-  const ref = useRef();
-  const handlePrint = useReactToPrint({ content: () => ref.current });
+  const contentRef = useRef();
 
+  const handlePrint = useReactToPrint({
+    contentRef, // ✅ thay vì content: () => ref.current
+    documentTitle: `PhieuChiDinh_${ticket?.barcode || "PMedClinic"}`,
+    pageStyle: `
+      @page { size: A5; margin: 15mm; }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact !important;
+        }
+      }
+    `,
+  });
+  console.log("ticket, ", ticket);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-xl w-[700px] p-6 relative" ref={ref}>
+      <div className="bg-white rounded-xl shadow-xl w-[700px] p-6 relative" ref={contentRef}>
         <button
           className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
           onClick={onClose}
@@ -18,13 +31,17 @@ const IndicationDetailModal = ({ ticket, onClose }) => {
         {/* Header */}
         <div className="text-center mb-4">
           <h2 className="font-bold text-lg text-blue-700">Phòng khám PMedClinic</h2>
-          <p className="text-sm">Barcode: {ticket.barcode}</p>
+           {ticket.barcode && (
+              <div className="flex justify-center my-2">
+                <Barcode value={ticket.barcode} height={20} displayValue={true}/>
+              </div>
+            )}
           <h3 className="font-bold text-xl mt-2">Phiếu chỉ định cận lâm sàng</h3>
         </div>
 
         {/* Thông tin bệnh nhân */}
         <div className="mb-4">
-          <p><strong>Bệnh nhân:</strong> {ticket.patient?.full_name}</p>
+          <p><strong>Bệnh nhân:</strong> {ticket.patient_name}</p>
           <p><strong>Chẩn đoán lâm sàng:</strong> {ticket.diagnosis}</p>
         </div>
 
@@ -35,6 +52,7 @@ const IndicationDetailModal = ({ ticket, onClose }) => {
               <th className="border px-2 py-1">STT</th>
               <th className="border px-2 py-1">Tên dịch vụ</th>
               <th className="border px-2 py-1">Phòng</th>
+              <th className="border px-2 py-1">Số thứ tự</th>
             </tr>
           </thead>
           <tbody>
@@ -43,15 +61,21 @@ const IndicationDetailModal = ({ ticket, onClose }) => {
                 <td className="border px-2 py-1">{idx + 1}</td>
                 <td className="border px-2 py-1">{s.service_name}</td>
                 <td className="border px-2 py-1">{s.room_name || "--"}</td>
+                <td className="border px-2 py-1 text-center">{s.queue_number || "--"}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <div className="mt-4 text-sm flex justify-between">
+        <div className="mt-4 text-sm flex justify-between items-end">
           <p>Ngày lập: {new Date(ticket.indication_date).toLocaleString("vi-VN")}</p>
-          <p>Bác sĩ chỉ định: .......................................</p>
+          <div className="text-center">
+            <p>Bác sĩ chỉ định:</p>
+            <p>.......................................</p>
+            <p className="font-medium mt-1">{ticket.doctor_name || " "}</p>
+          </div>
         </div>
+
 
         <div className="text-right mt-4">
           <button

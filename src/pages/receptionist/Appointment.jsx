@@ -1,45 +1,120 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import CreateVisitForm from "./components/CreateVisitForm";
 import { getTodayAppointments } from "../../api/appointment.api";
 import { createVisit } from "../../api/visit.api";
+import { createMedicalTicket } from "../../api/medical-ticket.api";
+import { createBill } from "../../api/bill.api";
+import { createVietQRPayment } from "../../api/payment.api";
+import VisitTicketModal from "./components/VisitTicketModal";
+import Toast from "../../components/modals/Toast";
 
 export default function Appointment() {
-    const [showForm, setShowForm] = useState(false);
     const [appointments, setAppointments] = useState([]);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [creatingVisit, setCreatingVisit] = useState(false);
+    const [ticketModal, setTicketModal] = useState(null);
+    const [billInfo, setBillInfo] = useState(null);
+    const [paymentInfo, setPaymentInfo] = useState(null);
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
 
-    // --- Gọi API lấy danh sách lịch hẹn hôm nay ---
-    useEffect(() => {
-        const fetchAppointments = async () => {
-            try {
-                setLoading(true);
-                const res = await getTodayAppointments(); // gọi API
-                if (Array.isArray(res)) {
-                    setAppointments(res);
-                } else if (res?.data) {
-                    setAppointments(res.data);
-                } else {
-                    throw new Error("Dữ liệu không hợp lệ");
-                }
-            } catch (err) {
-                console.error("Lỗi khi tải lịch hẹn:", err);
-                setError("Không thể tải danh sách lịch hẹn");
-            } finally {
-                setLoading(false);
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const fetchAppointments = useCallback(async () => {
+        try {
+            setLoading(true);
+            const res = await getTodayAppointments();
+            if (Array.isArray(res)) {
+                setAppointments(res);
+            } else if (res?.data) {
+                setAppointments(res.data);
+            } else {
+                throw new Error("Dữ liệu không hợp lệ");
             }
-        };
-        fetchAppointments();
+            setError(null);
+        } catch (err) {
+            console.error("Lỗi khi tải lịch hẹn:", err);
+            setError("Không thể tải danh sách lịch hẹn");
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const handleCreateVisit = (dataVisit) => {
-        // Gọi API tạo phiếu thăm khám
-        createVisit(dataVisit);
-        setShowForm(false);
-        setSelectedAppointment(null);
+    useEffect(() => {
+        fetchAppointments();
+    }, [fetchAppointments]);
+
+    const handleCreateVisit = async (dataVisit) => {
+        try {
+            setCreatingVisit(true);
+            const visitResponse = await createVisit(dataVisit);
+            const visitEntity = visitResponse?.id ? visitResponse : visitResponse?.data;
+            if (!visitEntity?.id) {
+                throw new Error("Không xác định được ID lượt khám vừa tạo");
+            }
+            const ticket = await createMedicalTicket(visitEntity.id);
+            setTicketModal(ticket);
+            setBillInfo(null);
+            setPaymentInfo(null);
+            showToast("Đã tạo lượt khám và phiếu khám thành công");
+            setSelectedAppointment(null);
+            await fetchAppointments();
+        } catch (err) {
+            console.error("Lỗi tạo visit:", err);
+            const message = err?.response?.message || err?.message || "Không thể tạo thăm khám";
+            showToast(message, "error");
+        } finally {
+            setCreatingVisit(false);
+        }
+    };
+
+    const handleCreateBillFromTicket = async () => {
+        if (!ticketModal) return;
+        try {
+            const bill = await createBill({
+                bill_type: "CLINICAL",
+                patient_id: ticketModal.patient_id,
+                medical_ticket_id: ticketModal.ticket_id,
+            });
+            setBillInfo(bill);
+            showToast("Đã tạo hóa đơn khám", "success");
+        } catch (err) {
+            console.error("Lỗi tạo hóa đơn:", err);
+            const message = err?.response?.message || err?.message || "Không thể tạo hóa đơn";
+            showToast(message, "error");
+        }
+    };
+
+    const handleCreatePaymentFromBill = async () => {
+        if (!ticketModal || !billInfo) return;
+        try {
+            const amount =
+                Number(ticketModal.clinical_fee) ||
+                Number(billInfo.total) ||
+                0;
+            if (!amount) {
+                throw new Error("Phí khám chưa được thiết lập");
+            }
+            const payment = await createVietQRPayment({
+                bill_id: billInfo.id,
+                amount,
+            });
+            setPaymentInfo(payment);
+            showToast("Đã tạo mã QR thanh toán", "success");
+        } catch (err) {
+            console.error("Lỗi tạo QR:", err);
+            const message = err?.response?.message || err?.message || "Không thể tạo mã QR";
+            showToast(message, "error");
+        }
     };
 
     // --- Bộ lọc tìm kiếm, phân trang ---
@@ -223,6 +298,22 @@ export default function Appointment() {
                                 onClose={() => setSelectedAppointment(null)}
                                 appointment={selectedAppointment} // <-- dữ liệu thực từ hàng được chọn
                                 availableDoctors={selectedAppointment.doctor ? [selectedAppointment.doctor] : []} // hoặc có thể bỏ nếu form không cần danh sách
+                                isSubmitting={creatingVisit}
+                            />
+                        )}
+
+                        {ticketModal && (
+                            <VisitTicketModal
+                                ticket={ticketModal}
+                                bill={billInfo}
+                                payment={paymentInfo}
+                                onCreateBill={handleCreateBillFromTicket}
+                                onCreatePayment={handleCreatePaymentFromBill}
+                                onClose={() => {
+                                    setTicketModal(null);
+                                    setBillInfo(null);
+                                    setPaymentInfo(null);
+                                }}
                             />
                         )}
 
@@ -292,6 +383,14 @@ export default function Appointment() {
                     </div>
                 </main>
             </div>
+
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ ...toast, show: false })}
+                />
+            )}
         </div>
     );
 }

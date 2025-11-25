@@ -1,16 +1,20 @@
+import { parseUTCDate, formatUTCDateOnly, formatUTCTime } from "./dateUtils";
+
 export function formatDateShort(dateStr) {
-  const d = new Date(dateStr);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}`;
+  if (!dateStr) return "";
+  const utcDate = parseUTCDate(dateStr);
+  if (!utcDate) return "";
+  return utcDate.local().format("DD/MM");
 }
 
 export function formatWeekday(dateStr, locale = 'vi-VN') {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString(locale, { weekday: 'short' });
+  if (!dateStr) return "";
+  const utcDate = parseUTCDate(dateStr);
+  if (!utcDate) return "";
+  return utcDate.local().format("ddd");
 }
 
 export function formatTime(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (!dateStr) return "";
+  return formatUTCTime(dateStr);
 }
