@@ -19,8 +19,8 @@ export const getIndicationsByPatient = async (patientId) => {
 };
 
 // Tạo phiếu chỉ định mới (bác sĩ thực hiện)
-export const createIndicationTicket = async (userId, dto) => {
-  const res = await axiosClient.post(`/indication-ticket/${userId}`, dto); 
+export const createIndicationTicket = async (dto) => {
+  const res = await axiosClient.post(`/indication-ticket/`, dto); 
   return res.data;
 };
 

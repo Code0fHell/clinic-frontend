@@ -9,6 +9,9 @@ import DoctorDashBoardPage from './pages/doctor/DoctorDashBoardPage'
 import MakeAppointmentPage from './pages/appointment/MakeAppointmentPage';
 import DoctorAppointmentsPage from './pages/doctor/DoctorAppointmentPage';
 import DoctorVisitPage from './pages/doctor/DoctorVisitPage';
+import DoctorPrescriptionListPage from './pages/doctor/DoctorPrescriptionListPage';
+import DoctorPrescriptionViewPage from './pages/doctor/DoctorPrescriptionViewPage';
+import DoctorPrescriptionEditPage from './pages/doctor/DoctorPrescriptionEditPage';
 import ReceptionistDashboard from './pages/receptionist/Dashboard';
 import AppointmentPage from './pages/receptionist/Appointment';
 import PatientPage from './pages/receptionist/Patient';
@@ -28,6 +31,9 @@ function App() {
           <Route path='/doctor/dashboard' element={<DoctorDashBoardPage/>}/>
           <Route path='/doctor/appointment' element={<DoctorAppointmentsPage/>}/>
           <Route path='/doctor/visit' element={<DoctorVisitPage/>}/>
+          <Route path='/doctor/prescription' element={<DoctorPrescriptionListPage/>}/>
+          <Route path='/doctor/prescription/:id' element={<DoctorPrescriptionViewPage/>}/>
+          <Route path='/doctor/prescription/:id/edit' element={<DoctorPrescriptionEditPage/>}/>
 
           {/* Protected routes */}
           <Route element={<PrivateRoute />}>

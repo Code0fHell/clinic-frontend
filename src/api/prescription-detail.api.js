@@ -11,3 +11,13 @@ export const getPrescriptionDetails = async (prescriptionId) => {
   const res = await axiosClient.get(`/prescription-detail/prescription/${prescriptionId}`);
   return res.data;
 };
+
+export const updatePrescriptionDetail = async (id, dto) => {
+  const res = await axiosClient.put(`/prescription-detail/${id}`, dto);
+  return res.data;
+};
+
+export const deletePrescriptionDetail = async (id) => {
+  const res = await axiosClient.delete(`/prescription-detail/${id}`);
+  return res.data;
+};

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
+import CreateInvoiceForm from "./components/CreateInvoiceForm";
 
 export default function Invoice() {
     /* ---------- DỮ LIỆU MẪU ---------- */
@@ -71,6 +72,7 @@ export default function Invoice() {
 
                 {/* ==== MAIN CONTENT – KHÔNG CUỘN TOÀN TRANG ==== */}
                 <main className="flex-1 ml-24 flex flex-col overflow-hidden p-6">
+                    <CreateInvoiceForm />
                     {/* ==== KHỐI BẢNG – CHỈ PHẦN NÀY CUỘN ==== */}
                     <div className="flex-1 p-6 mt-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
                         <h2 className="text-3xl font-bold text-gray-700 mb-5 text-left">Danh sách hóa đơn</h2>
