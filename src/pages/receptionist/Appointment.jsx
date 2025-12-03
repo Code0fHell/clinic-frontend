@@ -7,7 +7,6 @@ import { createVisit } from "../../api/visit.api";
 import { createMedicalTicket } from "../../api/medical-ticket.api";
 import { createBill } from "../../api/bill.api";
 import { createVietQRPayment } from "../../api/payment.api";
-import VisitTicketModal from "./components/VisitTicketModal";
 import Toast from "../../components/modals/Toast";
 
 export default function Appointment() {
@@ -307,22 +306,6 @@ export default function Appointment() {
                                 isSubmitting={creatingVisit}
                             />
                         )}
-
-                        {ticketModal && (
-                            <VisitTicketModal
-                                ticket={ticketModal}
-                                bill={billInfo}
-                                payment={paymentInfo}
-                                onCreateBill={handleCreateBillFromTicket}
-                                onCreatePayment={handleCreatePaymentFromBill}
-                                onClose={() => {
-                                    setTicketModal(null);
-                                    setBillInfo(null);
-                                    setPaymentInfo(null);
-                                }}
-                            />
-                        )}
-
 
                         {/* --- PHÂN TRANG --- */}
                         <div className="border-t border-gray-200 bg-gray-50 p-4 flex-shrink-0">

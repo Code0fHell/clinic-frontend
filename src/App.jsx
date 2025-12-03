@@ -18,6 +18,7 @@ import PatientPage from './pages/receptionist/Patient';
 import InvoicePage from './pages/receptionist/Invoice';
 import TaskPage from './pages/receptionist/Task';
 import PrivateRoute from './routes/PrivateRoute';
+import ProfilePage from './pages/profile/ProfilePage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/patient/booking" element={<MakeAppointmentPage/>} />
+          <Route path='/profile' element={<ProfilePage/>}/>
           <Route path='/doctor/dashboard' element={<DoctorDashBoardPage/>}/>
           <Route path='/doctor/appointment' element={<DoctorAppointmentsPage/>}/>
           <Route path='/doctor/visit' element={<DoctorVisitPage/>}/>
