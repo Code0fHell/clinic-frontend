@@ -1,13 +1,18 @@
 import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import useNotifications from "../../hooks/useNotifications";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { unreadCount, refresh } = useNotifications();
 
   const navigate = useNavigate();
   const [dropdown, setDropdown] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const avatarRef = useRef();
+  const notificationRef = useRef();
 
   const handleLogout = () => {
     logout();
@@ -50,36 +55,78 @@ const Header = () => {
         )}
       </nav>
       {user ? (
-        <div className="relative" ref={avatarRef}>
-          <button
-            className="flex items-center gap-2 focus:outline-none"
-            onClick={() => setDropdown((v) => !v)}
-          >
-            <img
-              src={avatarUrl}
-              alt="avatar"
-              className="w-10 h-10 rounded-full border object-cover"
+        <div className="flex items-center gap-4">
+          {/* Notification Icon */}
+          <div className="relative" ref={notificationRef}>
+            <button
+              className="relative p-2 text-gray-600 hover:text-blue-600 transition focus:outline-none"
+              onClick={() => {
+                setNotificationOpen((v) => !v);
+                setDropdown(false);
+              }}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+            <NotificationDropdown
+              isOpen={notificationOpen}
+              onClose={() => setNotificationOpen(false)}
+              unreadCount={unreadCount}
+              onMarkRead={refresh}
             />
-            <svg width="18" height="18" fill="none" viewBox="0 0 20 20">
-              <path d="M5 8l5 5 5-5" stroke="#555" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-          {dropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50">
-              <button
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                onClick={() => { setDropdown(false); navigate("/profile"); }}
-              >
-                Xem thông tin cá nhân
-              </button>
-              <button
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                onClick={handleLogout}
-              >
-                Đăng xuất
-              </button>
-            </div>
-          )}
+          </div>
+
+          {/* User Avatar Dropdown */}
+          <div className="relative" ref={avatarRef}>
+            <button
+              className="flex items-center gap-2 focus:outline-none"
+              onClick={() => {
+                setDropdown((v) => !v);
+                setNotificationOpen(false);
+              }}
+            >
+              <img
+                src={avatarUrl}
+                alt="avatar"
+                className="w-10 h-10 rounded-full border object-cover"
+              />
+              <svg width="18" height="18" fill="none" viewBox="0 0 20 20">
+                <path d="M5 8l5 5 5-5" stroke="#555" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            {dropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50">
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => { setDropdown(false); navigate("/profile"); }}
+                >
+                  Xem thông tin cá nhân
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={handleLogout}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <Link

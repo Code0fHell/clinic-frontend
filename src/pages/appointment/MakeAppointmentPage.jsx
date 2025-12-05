@@ -151,7 +151,7 @@ const MakeAppointmentPage = () => {
                         "Đặt lịch thành công! Kiểm tra lịch hẹn trong dashboard.",
                     type: "success",
                 });
-                navigate("/home");
+                navigate("/patient/home");
             } else {
                 await guestBookAppointment({
                     ...form,
