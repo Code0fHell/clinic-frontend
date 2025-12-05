@@ -6,7 +6,7 @@ export default function CreateVisitForm({
     appointment,
     patient,
     availableDoctors = [],
-    isSubmitting = false,
+    // isSubmitting = false,
 }) {
     const isFromAppointment = !!appointment;
 
@@ -224,14 +224,16 @@ export default function CreateVisitForm({
                     <div className="flex justify-end mt-4">
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition cursor-pointer"
+                        >
+                            Tạo thăm khám
+                            {/* disabled={isSubmitting}
                             className={`px-6 py-3 rounded-lg font-semibold transition ${
                                 isSubmitting
                                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                     : "bg-[#008080] text-white hover:bg-teal-700"
-                            }`}
-                        >
-                            {isSubmitting ? "Đang tạo..." : "Tạo thăm khám"}
+                            }`} */}
+                            {/* {isSubmitting ? "Đang tạo..." : "Tạo thăm khám"} */}
                         </button>
                     </div>
                 </form>
