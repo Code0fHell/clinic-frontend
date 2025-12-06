@@ -1,8 +1,20 @@
 import axiosClient from "./axiosClient";
 
-// Lấy toàn bộ danh sách dịch vụ y tế
-export const getAllMedicalServices = async () => {
-  const res = await axiosClient.get("/medical-service");
+// Lấy toàn bộ danh sách dịch vụ y tế với pagination và filtering
+export const getAllMedicalServices = async (page, limit, service_type) => {
+  const params = {};
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
+  if (service_type) params.service_type = service_type;
+  const res = await axiosClient.get("/medical-service", { params });
+  return res.data;
+};
+
+// Lấy dịch vụ cho trang chủ (tối đa 3)
+export const getHomepageServices = async (service_type) => {
+  const params = {};
+  if (service_type) params.service_type = service_type;
+  const res = await axiosClient.get("/medical-service/homepage", { params });
   return res.data;
 };
 

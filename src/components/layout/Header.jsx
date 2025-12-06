@@ -45,7 +45,7 @@ const Header = () => {
         {isPatient ? (
           <>
             <Link to="/medicines" className="hover:text-blue-600 transition">Thuốc</Link>
-            <Link to="/appointments" className="hover:text-blue-600 transition">Lịch hẹn</Link>
+            <Link to="/patient/appointments" className="hover:text-blue-600 transition">Lịch hẹn</Link>
           </>
         ) : (
           <>
