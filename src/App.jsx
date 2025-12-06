@@ -19,6 +19,10 @@ import InvoicePage from './pages/receptionist/Invoice';
 import TaskPage from './pages/receptionist/Task';
 import PrivateRoute from './routes/PrivateRoute';
 import ProfilePage from './pages/profile/ProfilePage';
+import ServicePage from './pages/services/ServicePage';
+import MedicinePage from './pages/medicine/MedicinePage';
+import DoctorsPage from './pages/doctors/DoctorsPage';
+import AppointmentListPage from './pages/appointment/AppointmentListPage';
 
 function App() {
   return (
@@ -30,6 +34,10 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/patient/booking" element={<MakeAppointmentPage/>} />
           <Route path='/profile' element={<ProfilePage/>}/>
+          <Route path='/services' element={<ServicePage/>}/>
+          <Route path='/medicines' element={<MedicinePage/>}/>
+          <Route path='/doctors' element={<DoctorsPage/>}/>
+          <Route path='/patient/appointments' element={<AppointmentListPage/>}/>
           <Route path='/doctor/dashboard' element={<DoctorDashBoardPage/>}/>
           <Route path='/doctor/appointment' element={<DoctorAppointmentsPage/>}/>
           <Route path='/doctor/visit' element={<DoctorVisitPage/>}/>
