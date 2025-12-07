@@ -6,7 +6,7 @@ import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
 
-const LabIndicationListPage = () => {
+const DiagnosticIndicationListPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState({
@@ -15,120 +15,112 @@ const LabIndicationListPage = () => {
         type: "success",
     });
 
-    // Dữ liệu mẫu - danh sách bệnh nhân được chỉ định xét nghiệm
+    // Dữ liệu mẫu - danh sách bệnh nhân được chỉ định chẩn đoán hình ảnh
     const [indications] = useState([
         {
-            id: "ind-001",
-            barcode: "IND001234567",
+            id: "ind-diag-001",
+            barcode: "DIAG001234567",
             patient: {
                 id: "p-001",
-                patient_full_name: "Nguyễn Văn An",
-                patient_dob: "1985-03-15",
-                patient_phone: "0901234567",
-                patient_address: "123 Lê Lợi, Q1, TP.HCM",
+                patient_full_name: "Trần Văn Bình",
+                patient_dob: "1980-05-20",
+                patient_phone: "0905123456",
+                patient_address: "234 Võ Văn Tần, Q3, TP.HCM",
                 patient_gender: "Nam",
             },
             doctor: {
                 id: "d-001",
                 user: {
-                    full_name: "BS. Trần Thị Bình",
+                    full_name: "BS. Nguyễn Hữu Thọ",
                 },
             },
-            diagnosis: "Nghi ngờ viêm gan B, cần xét nghiệm chức năng gan và virus",
-            indication_date: "2024-12-06T08:30:00",
-            total_fee: 350000,
+            diagnosis: "Ho kéo dài 3 tuần, đau ngực, nghi ngờ viêm phổi",
+            indication_date: "2024-12-07T08:00:00",
+            total_fee: 200000,
             serviceItems: [
                 {
                     id: "si-001",
                     medical_service: {
-                        name: "Xét nghiệm HBsAg",
-                        description: "Xét nghiệm kháng nguyên bề mặt viêm gan B",
+                        name: "X-quang phổi trước sau",
+                        description: "Chụp X-quang phổi tư thế thẳng trước sau",
                     },
                     quantity: 1,
                 },
                 {
                     id: "si-002",
                     medical_service: {
-                        name: "Xét nghiệm chức năng gan (AST, ALT)",
-                        description: "Đánh giá tình trạng chức năng gan",
+                        name: "X-quang phổi nghiêng",
+                        description: "Chụp X-quang phổi tư thế nghiêng",
                     },
                     quantity: 1,
                 },
             ],
         },
         {
-            id: "ind-002",
-            barcode: "IND001234568",
+            id: "ind-diag-002",
+            barcode: "DIAG001234568",
             patient: {
                 id: "p-002",
-                patient_full_name: "Lê Thị Cẩm",
-                patient_dob: "1992-07-20",
-                patient_phone: "0912345678",
-                patient_address: "456 Nguyễn Huệ, Q1, TP.HCM",
+                patient_full_name: "Nguyễn Thị Mai",
+                patient_dob: "1995-08-15",
+                patient_phone: "0916234567",
+                patient_address: "567 Lý Thường Kiệt, Q10, TP.HCM",
                 patient_gender: "Nữ",
             },
             doctor: {
                 id: "d-002",
                 user: {
-                    full_name: "BS. Phạm Minh Đức",
+                    full_name: "BS. Lê Văn Hùng",
                 },
             },
-            diagnosis: "Khó thở, ho ra máu, cần xét nghiệm vi khuẩn lao",
-            indication_date: "2024-12-06T09:00:00",
-            total_fee: 450000,
+            diagnosis: "Khó thở, ho ra máu, nghi ngờ lao phổi",
+            indication_date: "2024-12-07T09:30:00",
+            total_fee: 300000,
             serviceItems: [
                 {
                     id: "si-003",
                     medical_service: {
-                        name: "Xét nghiệm AFB đờm",
-                        description: "Tìm vi khuẩn kháng acid trong đờm (soi trực tiếp)",
+                        name: "X-quang phổi 2 tư thế",
+                        description: "Chụp X-quang phổi trước sau và nghiêng để phát hiện tổn thương",
                     },
                     quantity: 1,
                 },
                 {
                     id: "si-004",
                     medical_service: {
-                        name: "Nuôi cпосев vi khuẩn lao",
-                        description: "Cấy vi khuẩn lao từ mẫu đờm",
+                        name: "Chụp CT ngực",
+                        description: "Chụp cắt lớp vi tính ngực để đánh giá chi tiết",
                     },
                     quantity: 1,
                 },
             ],
         },
         {
-            id: "ind-003",
-            barcode: "IND001234569",
+            id: "ind-diag-003",
+            barcode: "DIAG001234569",
             patient: {
                 id: "p-003",
-                patient_full_name: "Trần Văn Đông",
-                patient_dob: "1978-11-05",
-                patient_phone: "0923456789",
-                patient_address: "789 Lý Tự Trọng, Q1, TP.HCM",
+                patient_full_name: "Phạm Minh Tuấn",
+                patient_dob: "1988-03-10",
+                patient_phone: "0927345678",
+                patient_address: "890 Cách Mạng Tháng 8, Q3, TP.HCM",
                 patient_gender: "Nam",
             },
             doctor: {
                 id: "d-001",
                 user: {
-                    full_name: "BS. Trần Thị Bình",
+                    full_name: "BS. Nguyễn Hữu Thọ",
                 },
             },
-            diagnosis: "Hen phế quản, đánh giá mức độ viêm đường hô hấp",
-            indication_date: "2024-12-06T10:15:00",
-            total_fee: 280000,
+            diagnosis: "Thở khò khè, nghi ngờ hen phế quản cấp",
+            indication_date: "2024-12-07T10:45:00",
+            total_fee: 150000,
             serviceItems: [
                 {
                     id: "si-005",
                     medical_service: {
-                        name: "Xét nghiệm khí máu động mạch",
-                        description: "Đánh giá oxy hóa máu và cân bằng acid-base",
-                    },
-                    quantity: 1,
-                },
-                {
-                    id: "si-006",
-                    medical_service: {
-                        name: "Xét nghiệm IgE toàn phần",
-                        description: "Đánh giá mức độ dị ứng",
+                        name: "X-quang lồng ngực",
+                        description: "Chụp X-quang lồng ngực để đánh giá tình trạng phổi",
                     },
                     quantity: 1,
                 },
@@ -137,7 +129,7 @@ const LabIndicationListPage = () => {
     ]);
 
     const handleViewDetail = (indication) => {
-        navigate(`/lab/indication/${indication.id}/result`, {
+        navigate(`/diagnostic/indication/${indication.id}/result`, {
             state: { indication },
         });
     };
@@ -151,7 +143,7 @@ const LabIndicationListPage = () => {
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-2xl font-bold text-gray-800">
-                                Danh sách bệnh nhân chỉ định xét nghiệm
+                                Danh sách bệnh nhân chỉ định chẩn đoán hình ảnh
                             </h1>
                             <button
                                 onClick={() => window.location.reload()}
@@ -167,7 +159,7 @@ const LabIndicationListPage = () => {
                             </div>
                         ) : indications.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                                Chưa có bệnh nhân nào được chỉ định xét nghiệm
+                                Chưa có bệnh nhân nào được chỉ định chẩn đoán hình ảnh
                             </div>
                         ) : (
                             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -260,5 +252,6 @@ const LabIndicationListPage = () => {
     );
 };
 
-export default LabIndicationListPage;
+export default DiagnosticIndicationListPage;
+
 

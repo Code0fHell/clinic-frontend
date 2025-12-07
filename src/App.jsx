@@ -38,6 +38,11 @@ import LabIndicationListPage from './pages/doctor/lab/LabIndicationListPage';
 import LabTestResultPage from './pages/doctor/lab/LabTestResultPage';
 import LabCompletedResultsPage from './pages/doctor/lab/LabCompletedResultsPage';
 
+import DiagnosticDoctorDashBoardPage from './pages/doctor/diagnostic/DiagnosticDoctorDashBoardPage';
+import DiagnosticIndicationListPage from './pages/doctor/diagnostic/DiagnosticIndicationListPage';
+import DiagnosticImageResultPage from './pages/doctor/diagnostic/DiagnosticImageResultPage';
+import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/DiagnosticCompletedResultsPage';
+
 function App() {
     return (
         <AuthProvider>
@@ -87,7 +92,13 @@ function App() {
                         <Route path='/lab/indications' element={<LabIndicationListPage/>}/>
                         <Route path='/lab/indication/:id/result' element={<LabTestResultPage/>}/>
                         <Route path='/lab/completed-results' element={<LabCompletedResultsPage/>}/>
-                        
+
+                         {/* diagnostic doctor routes */}
+                         <Route path='/diagnostic/dashboard' element={<DiagnosticDoctorDashBoardPage/>}/>
+                        <Route path='/diagnostic/indications' element={<DiagnosticIndicationListPage/>}/>
+                        <Route path='/diagnostic/indication/:id/result' element={<DiagnosticImageResultPage/>}/>
+                        <Route path='/diagnostic/completed-results' element={<DiagnosticCompletedResultsPage/>}/>
+
                         <Route
                             path="/receptionist/home"
                             element={<ReceptionistDashboard />}

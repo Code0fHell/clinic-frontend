@@ -4,10 +4,10 @@ import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
 import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
-import LabResultPrintModal from "./LabResultPrintModal";
+import DiagnosticResultPrintModal from "./DiagnosticResultPrintModal";
 import { formatUTCDate } from "../../../utils/dateUtils";
 
-const LabCompletedResultsPage = () => {
+const DiagnosticCompletedResultsPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [selectedResult, setSelectedResult] = useState(null);
@@ -18,87 +18,71 @@ const LabCompletedResultsPage = () => {
         type: "success",
     });
 
-    // Dữ liệu mẫu - danh sách kết quả đã xử lý
+    // Dữ liệu mẫu - danh sách kết quả đã xử lý với ảnh giả lập
     const [completedResults] = useState([
         {
-            id: "result-001",
-            barcode: "LAB001234567",
+            id: "result-diag-001",
+            barcode: "DIAGRES001234567",
             indication: {
-                id: "ind-001",
-                barcode: "IND001234567",
-                diagnosis: "Nghi ngờ viêm gan B, cần xét nghiệm HBsAg",
-                indication_date: "2024-12-06T08:30:00",
+                id: "ind-diag-001",
+                barcode: "DIAG001234567",
+                diagnosis: "Ho kéo dài 3 tuần, đau ngực, nghi ngờ viêm phổi",
+                indication_date: "2024-12-07T08:00:00",
             },
             patient: {
                 id: "p-001",
-                patient_full_name: "Nguyễn Văn An",
-                patient_dob: "1985-03-15",
-                patient_phone: "0901234567",
-                patient_address: "123 Lê Lợi, Q1, TP.HCM",
+                patient_full_name: "Trần Văn Bình",
+                patient_dob: "1980-05-20",
+                patient_phone: "0905123456",
+                patient_address: "234 Võ Văn Tần, Q3, TP.HCM",
                 patient_gender: "Nam",
             },
             doctor: {
                 id: "d-001",
                 user: {
-                    full_name: "BS. Trần Thị Bình",
+                    full_name: "BS. Nguyễn Hữu Thọ",
                 },
             },
-            testResults: [
-                {
-                    serviceName: "Xét nghiệm HBsAg",
-                    result: "Âm tính",
-                    unit: "",
-                    normalRange: "Âm tính",
-                },
-                {
-                    serviceName: "Xét nghiệm chức năng gan (AST, ALT)",
-                    result: "AST: 28 U/L, ALT: 32 U/L",
-                    unit: "U/L",
-                    normalRange: "AST: <40 U/L, ALT: <40 U/L",
-                },
+            serviceNames: ["X-quang phổi trước sau", "X-quang phổi nghiêng"],
+            images: [
+                "https://images.unsplash.com/photo-1631651363531-fd29aec4cb5c?q=80&w=776&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                "https://images.unsplash.com/photo-1631651363531-fd29aec4cb5c?q=80&w=776&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             ],
-            conclusion: "Kết quả xét nghiệm HBsAg âm tính, không phát hiện dấu hiệu viêm gan B. Chức năng gan trong giới hạn bình thường. Khuyến nghị theo dõi định kỳ.",
-            created_at: "2024-12-06T14:30:00",
+            description: "Hình ảnh X-quang cho thấy đám mờ dạng thâm nhiễm khu trú ở thùy dưới phổi phải, ranh giới không rõ. Góc sườn hoành phải nhẹ độ tù. Không thấy hình ảnh tràn khí màng phổi. Tim to ranh giới bình thường. Xương sườn, xương đốt sống không có tổn thương.",
+            conclusion: "Viêm phổi thùy dưới phổi phải. Khuyến nghị: Điều trị kháng sinh theo phác đồ, tái khám sau 1 tuần để đánh giá đáp ứng điều trị.",
+            created_at: "2024-12-07T14:30:00",
         },
         {
-            id: "result-002",
-            barcode: "LAB001234568",
+            id: "result-diag-002",
+            barcode: "DIAGRES001234568",
             indication: {
-                id: "ind-002",
-                barcode: "IND001234568",
-                diagnosis: "Khó thở, ho ra máu, cần xét nghiệm vi khuẩn lao",
-                indication_date: "2024-12-06T09:00:00",
+                id: "ind-diag-002",
+                barcode: "DIAG001234568",
+                diagnosis: "Khó thở, ho ra máu, nghi ngờ lao phổi",
+                indication_date: "2024-12-07T09:30:00",
             },
             patient: {
                 id: "p-002",
-                patient_full_name: "Lê Thị Cẩm",
-                patient_dob: "1992-07-20",
-                patient_phone: "0912345678",
-                patient_address: "456 Nguyễn Huệ, Q1, TP.HCM",
+                patient_full_name: "Nguyễn Thị Mai",
+                patient_dob: "1995-08-15",
+                patient_phone: "0916234567",
+                patient_address: "567 Lý Thường Kiệt, Q10, TP.HCM",
                 patient_gender: "Nữ",
             },
             doctor: {
                 id: "d-002",
                 user: {
-                    full_name: "BS. Phạm Minh Đức",
+                    full_name: "BS. Lê Văn Hùng",
                 },
             },
-            testResults: [
-                {
-                    serviceName: "Xét nghiệm AFB đờm",
-                    result: "Dương tính 3+",
-                    unit: "",
-                    normalRange: "Âm tính",
-                },
-                {
-                    serviceName: "Nuôi cấy vi khuẩn lao",
-                    result: "Phát hiện Mycobacterium tuberculosis",
-                    unit: "",
-                    normalRange: "Âm tính",
-                },
+            serviceNames: ["X-quang phổi 2 tư thế", "Chụp CT ngực"],
+            images: [
+                "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?q=80&w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop",
             ],
-            conclusion: "Xét nghiệm AFB đờm dương tính 3+, nuôi cấy phát hiện vi khuẩn lao. Chẩn đoán: Lao phổi hoạt động. Khuyến nghị: Điều trị lao theo phác đồ 6 tháng (2RHZE/4RH), cách ly, xét nghiệm đờm kiểm tra sau 2 tháng điều trị.",
-            created_at: "2024-12-06T15:00:00",
+            description: "X-quang phổi: Hình ảnh đám mờ dạng đốm vón cục khu trú ở thùy trên phổi phải, ranh giới không đều. CT ngực: Tổn thương dạng hang ở đỉnh phổi phải, có hình ảnh dày thành. Hạch trung thất không to. Không có tràn dịch màng phổi.",
+            conclusion: "Lao phổi thùy trên phổi phải có hang. Khuyến nghị: Điều trị lao theo phác đồ 6 tháng, cách ly, tái khám định kỳ hàng tháng. Xét nghiệm đờm để xác định vi khuẩn lao.",
+            created_at: "2024-12-07T15:00:00",
         },
     ]);
 
@@ -125,7 +109,7 @@ const LabCompletedResultsPage = () => {
                             </h1>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => navigate("/lab/indications")}
+                                    onClick={() => navigate("/diagnostic/indications")}
                                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                                 >
                                     Danh sách chỉ định
@@ -145,7 +129,7 @@ const LabCompletedResultsPage = () => {
                             </div>
                         ) : completedResults.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                                Chưa có kết quả xét nghiệm nào
+                                Chưa có kết quả chẩn đoán hình ảnh nào
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -212,30 +196,45 @@ const LabCompletedResultsPage = () => {
                                             </div>
 
                                             <div className="mb-3">
-                                                <span className="font-medium text-gray-700">Kết quả xét nghiệm:</span>
-                                                <div className="mt-2 space-y-2">
-                                                    {result.testResults?.map((test, idx) => (
-                                                        <div
+                                                <span className="font-medium text-gray-700">Dịch vụ thực hiện:</span>
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    {result.serviceNames?.map((name, idx) => (
+                                                        <span
                                                             key={idx}
-                                                            className="bg-gray-50 p-3 rounded border border-gray-200"
+                                                            className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
                                                         >
-                                                            <div className="font-medium text-gray-800 mb-1">
-                                                                {test.serviceName}
-                                                            </div>
-                                                            <div className="text-sm text-gray-600">
-                                                                <span className="font-medium">Kết quả:</span> {test.result}
-                                                                {test.unit && ` (${test.unit})`}
-                                                            </div>
-                                                            {test.normalRange && (
-                                                                <div className="text-sm text-gray-500">
-                                                                    <span className="font-medium">Giá trị tham chiếu:</span>{" "}
-                                                                    {test.normalRange}
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                            {name}
+                                                        </span>
                                                     ))}
                                                 </div>
                                             </div>
+
+                                            {/* Hiển thị ảnh thumbnail */}
+                                            {result.images && result.images.length > 0 && (
+                                                <div className="mb-3">
+                                                    <span className="font-medium text-gray-700">Hình ảnh chẩn đoán:</span>
+                                                    <div className="mt-2 grid grid-cols-4 gap-2">
+                                                        {result.images.map((image, idx) => (
+                                                            <img
+                                                                key={idx}
+                                                                src={image}
+                                                                alt={`Ảnh ${idx + 1}`}
+                                                                className="w-full h-24 object-cover rounded border border-gray-300 cursor-pointer hover:opacity-80 transition"
+                                                                onClick={() => window.open(image, '_blank')}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {result.description && (
+                                                <div className="mb-3">
+                                                    <span className="font-medium text-gray-700">Mô tả:</span>
+                                                    <p className="text-gray-600 mt-1 bg-gray-50 p-3 rounded">
+                                                        {result.description}
+                                                    </p>
+                                                </div>
+                                            )}
 
                                             <div>
                                                 <span className="font-medium text-gray-700">Kết luận:</span>
@@ -257,7 +256,7 @@ const LabCompletedResultsPage = () => {
             </div>
 
             {showPrintModal && selectedResult && (
-                <LabResultPrintModal
+                <DiagnosticResultPrintModal
                     result={selectedResult}
                     onClose={handleClosePrintModal}
                 />
@@ -274,5 +273,6 @@ const LabCompletedResultsPage = () => {
     );
 };
 
-export default LabCompletedResultsPage;
+export default DiagnosticCompletedResultsPage;
+
 
