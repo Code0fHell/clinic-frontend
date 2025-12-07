@@ -54,7 +54,13 @@ const LoginPage = () => {
             navigate("/receptionist/home");
             break;
           case "DOCTOR":
-            navigate("/doctor/dashboard");
+            if (user.staff.doctor_type === "CLINICAL") {
+              navigate("/doctor/dashboard");
+            } else if (user.staff.doctor_type === "DIAGNOSTIC") {
+              navigate("/diagnostic/dashboard");
+            } else if (user.staff.doctor_type === "LAB") {
+              navigate("/lab/dashboard");
+            }
             break;
           case "OWNER":
           case "ADMIN":
