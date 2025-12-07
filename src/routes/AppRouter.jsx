@@ -6,7 +6,6 @@ import RoleBasedRoute from './RoleBasedRoute';
 // Example pages/components
 import MainLayout from '../components/layout/MainLayout';
 import DashboardPage from '../pages/DashboardPage';
-import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 // Add more imports for your actual pages as needed
@@ -17,7 +16,6 @@ const AppRouter = () => (
       {/* Protected routes */}
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
         {/* Role-based route example */}
         <Route
           path="/admin"

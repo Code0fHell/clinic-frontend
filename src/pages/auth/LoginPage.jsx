@@ -47,11 +47,20 @@ const LoginPage = () => {
           case "PATIENT":
             navigate("/patient/home");
             break;
+          case "PHARMACIST":
+            navigate("/pharmacist/home");
+            break;
           case "RECEPTIONIST":
             navigate("/receptionist/home");
             break;
           case "DOCTOR":
-            navigate("/doctor/dashboard");
+            if (user.staff.doctor_type === "CLINICAL") {
+              navigate("/doctor/dashboard");
+            } else if (user.staff.doctor_type === "DIAGNOSTIC") {
+              navigate("/diagnostic/dashboard");
+            } else if (user.staff.doctor_type === "LAB") {
+              navigate("/lab/dashboard");
+            }
             break;
           case "OWNER":
           case "ADMIN":

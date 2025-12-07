@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getTodayVisitQueue, updateVisitStatus } from "../../../api/visit.api";
 import { updateAppointmentStatus } from "../../../api/appointment.api";
 import dayjs from "dayjs";
+import { formatUTCTime } from "../../../utils/dateUtils";
 
 const UpcomingSchedule = () => {
   const [queue, setQueue] = useState([]);
@@ -71,7 +72,7 @@ const UpcomingSchedule = () => {
         <div className="relative border-l-2 border-gray-200 pl-6">
           {queue.length > 0 ? (
             queue.map((v, idx) => {
-              const time = dayjs(v.appointment.scheduled_date).format("HH:mm");
+              const time = formatUTCTime(v.appointment.scheduled_date);
               const patientName = v.patient?.patient_full_name || "Chưa rõ";
               const reason = v.appointment?.reason || v.visit_type || "--";
               const doctorName =

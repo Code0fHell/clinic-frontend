@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { getAllAppointments } from "../../../../api/appointment.api";
+import { parseUTCDate, getCurrentUTC } from "../../../../utils/dateUtils";
 import CalendarHeader from "./CalendarHeader";
 import CalendarWeekView from "./CalendarWeekView";
 import CalendarDayView from "./CalendarDayView";
@@ -20,10 +21,18 @@ const AppointmentCalendar = () => {
         const data = await getAllAppointments();
         setAppointments(data);
 
-        const now = dayjs();
+        const now = getCurrentUTC();
         const upcomingList = data
-          .filter((a) => a.scheduled_date && dayjs(a.scheduled_date).isAfter(now))
-          .sort((a, b) => dayjs(a.scheduled_date) - dayjs(b.scheduled_date))
+          .filter((a) => {
+            if (!a.scheduled_date) return false;
+            const apptUTC = parseUTCDate(a.scheduled_date);
+            return apptUTC && apptUTC.isAfter(now);
+          })
+          .sort((a, b) => {
+            const dateA = parseUTCDate(a.scheduled_date);
+            const dateB = parseUTCDate(b.scheduled_date);
+            return dateA.valueOf() - dateB.valueOf();
+          })
           .slice(0, 5);
         setUpcoming(upcomingList);
       } catch (err) {

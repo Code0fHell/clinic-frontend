@@ -7,10 +7,23 @@ const axiosClient = axios.create({
     },
 });
 
-axiosClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-});
+axiosClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+axiosClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.error("API error:", error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error);
+    }
+);
 
 export default axiosClient;
