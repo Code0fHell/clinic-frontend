@@ -10,8 +10,25 @@ export const paymentCash = async (data) => {
         throw err;
     }
 }
-export const createVietQRPayment = async (dto) => {
-  const res = await axiosClient.post("/payment/vietqr/create", dto);
-  return res.data;
-};
 
+// Tạo VietQR QR Code để thanh toán
+export const createVietQR = async (data) => {
+    try {
+        const res = await axiosClient.post("/payment/vietqr/create", data);
+        return res.data;
+    } catch (err) {
+        console.error("Lỗi khi tạo VietQR:", err.response?.data || err);
+        throw err;
+    }
+}
+
+// Kiểm tra trạng thái thanh toán
+export const getPaymentStatus = async (orderCode) => {
+    try {
+        const res = await axiosClient.get(`/payment/status/${orderCode}`);
+        return res.data;
+    } catch (err) {
+        console.error("Lỗi khi kiểm tra trạng thái:", err.response?.data || err);
+        throw err;
+    }
+}
