@@ -30,7 +30,7 @@ const Toast = ({ message, onClose, duration = 3500, type = "success" }) => {
         onClick={onClose}
         aria-label="Close"
       >
-        ×
+        x
       </button>
     </div>
   );
