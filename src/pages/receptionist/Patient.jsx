@@ -83,7 +83,10 @@ export default function Patient() {
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat('vi-VN').format(date);
+        return new Intl.DateTimeFormat('vi-VN')
+            .format(date)
+            .split('/')
+            .join('-');
     };
 
     const handleSelectVisit = async (visitId) => {
@@ -100,6 +103,7 @@ export default function Patient() {
         };
 
         const medicalTicketId = visit.medicalTickets?.[0]?.id || null;
+        const clinical_fee = visit.medicalTickets?.[0]?.clinical_fee || null;
         const creator = visit.created_by;
 
         setSelectedVisit({
@@ -107,6 +111,7 @@ export default function Patient() {
             patient,
             doctor,
             medicalTicketId,
+            clinical_fee,
             creator
         });
 
@@ -249,7 +254,7 @@ export default function Patient() {
                             </tr>
                             <tr>
                                 <td>Ngày khám:</td>
-                                <td>${ticket.issued_at ? ticket.issued_at.slice(0, 10).split('-').reverse().join('/') : ""}</td>
+                                <td>${ticket.issued_at ? ticket.issued_at.slice(0, 10).split('-').reverse().join('-') : ""}</td>
                             </tr>
                         </table>
 
@@ -459,12 +464,12 @@ export default function Patient() {
 
                         {renderTable(
                             dataVisit,
-                            ["STT", "Tên bệnh nhân", "Giới tính", "Địa chỉ", "Trạng thái", "Hành động"],
+                            ["TT", "Tên bệnh nhân", "Giới tính", "Địa chỉ", "Trạng thái", "Hành động"],
                             (item, index) => (
                                 <>
                                     <td className="px-4 py-3 text-left">{item.queue_number}</td>
                                     <td className="px-4 py-3 text-left">{item.patient?.patient_full_name || "Không rõ"}</td>
-                                    <td className="px-4 py-3 text-left">{item.patient?.patient_gender || "Không rõ"}</td>
+                                    <td className="px-4 py-3 text-left">{item.patient?.patient_gender === "NU" ? "Nữ" : "Nam" || "Không rõ"}</td>
                                     <td className="px-4 py-3 text-left">{item.patient?.patient_address || "Không rõ"}</td>
                                     {/* Trạng thái */}
                                     <td className="px-4 py-3 text-left">
@@ -552,7 +557,7 @@ export default function Patient() {
                         {/* BẢNG */}
                         {renderTable(
                             dataPatient,
-                            ["STT", "Tên bệnh nhân", "Giới tính", "Địa chỉ", "Ngày sinh", "Hành động"],
+                            ["TT", "Tên bệnh nhân", "Giới tính", "Điện thoại", "Địa chỉ", "Ngày sinh", "Hành động"],
                             (patient, index) => {
                                 // Check bệnh nhân này có visit CHECKED_IN hay không
                                 const hasActiveVisit = dataVisit.some(
@@ -564,9 +569,10 @@ export default function Patient() {
                                     <>
                                         <td className="px-4 py-3 text-left align-middle truncate">{index + 1}</td>
                                         <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_full_name}</td>
-                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_gender}</td>
+                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_gender === "NU" ? "Nữ" : "Nam"}</td>
+                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_phone}</td>
                                         <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_address}</td>
-                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_dob}</td>
+                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_dob.slice(0, 10).split('-').reverse().join('-')}</td>
                                         <td className="px-4 py-3 text-left align-middle whitespace-nowrap">
                                             <button
                                                 className="text-teal-600 hover:text-teal-800 cursor-pointer mr-3 text-sm font-medium transition"
@@ -794,6 +800,7 @@ export default function Patient() {
                     visit={selectedVisit} // Truyền selectedVisit qua form
                     onSubmit={async (payload) => {
                         try {
+                            console.log("Payload gửi createBill:", payload);
                             // Gọi API tạo hóa đơn
                             const res = await createBill(payload);
                             // console.log("Dữ liệu trả về:", JSON.stringify(res));
@@ -802,7 +809,13 @@ export default function Patient() {
                             setShowCreateInvoiceForm(false);
                             setShowPaymentMethodForm(true);
                         } catch (error) {
-                            alert("Lỗi tạo hóa đơn: " + error.message);
+                            console.error("Error object:", error);
+                            const errorMsg = error.response?.data?.message
+                                ? Array.isArray(error.response.data.message)
+                                    ? error.response.data.message.join(", ")
+                                    : error.response.data.message
+                                : error.message;
+                            alert("Lỗi tạo hóa đơn:\n" + errorMsg);
                         }
                     }}
                     onClose={() => setShowCreateInvoiceForm(false)}
@@ -823,9 +836,9 @@ export default function Patient() {
                                     console.log("Thanh toán tiền mặt thành công!", res);
                                 }
                                 else if (method === "BANK_TRANSFER") {
-                                    // Gọi API thanh toán chuyển khoản
-                                    // const res = await paymentBank(dto); // hoặc api.post("/payments/bank-transfer", dto)
-                                    // console.log("Yêu cầu chuyển khoản thành công!", res);
+                                    // VietQR thanh toán đã được xử lý trong CreateVietQRModal
+                                    // và onSuccess callback sẽ gọi onSubmit khi thanh toán thành công
+                                    console.log("Thanh toán chuyển khoản VietQR thành công!");
                                 }
 
                                 setShowPaymentMethodForm(false);

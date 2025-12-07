@@ -1,25 +1,35 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
-import CreateInvoiceForm from "./components/CreateInvoiceForm";
+import { getAllBillToday, getDetailBill } from "../../api/bill.api";
+import PaymentMethodForm from "./components/PaymentMethodForm";
+import { paymentCash } from "../../api/payment.api";
 
 export default function Invoice() {
-    /* ---------- DỮ LIỆU MẪU ---------- */
-    const initialData = [
-        { id: 1, patient: "Lê Gia Quang", total_amount: "500,000đ", created_by: "Nguyễn Hải Yến", payment_status: "Đang thanh toán" },
-        { id: 2, patient: "Lê Gia Quang", total_amount: "500,000đ", created_by: "Nguyễn Hải Yến", payment_status: "Thanh toán thành công" },
-        { id: 3, patient: "Lê Gia Quang", total_amount: "500,000đ", created_by: "Nguyễn Hải Yến", payment_status: "Thanh toán thất bại" }
-    ];
-
+    const [dataInvoiceToday, setDataInvoiceToday] = useState([]);
+    const [showPaymentMethodForm, setShowPaymentMethodForm] = useState(false);
+    const [dataSelectedInvoice, setDataSelectedInvoice] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(6);
     const pageSizeOptions = [5, 10, 25, 50, 100];
 
+    useEffect(() => {
+        const fetchDataInvoiceToday = async () => {
+            const res = await getAllBillToday();
+            setDataInvoiceToday(res);
+        }
+
+        fetchDataInvoiceToday();
+    }, [])
+
+    // console.log("Invoice today: " + JSON.stringify(dataInvoiceToday));
+
     /* ---------- LOGIC ---------- */
     const filteredData = useMemo(() => {
-        return initialData.filter((item) =>
-            item.patient.toLowerCase().includes(searchTerm.toLowerCase())
+        return dataInvoiceToday.filter((item) =>
+            item.patient_name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm]);
 
@@ -28,6 +38,8 @@ export default function Invoice() {
         const end = start + itemsPerPage;
         return filteredData.slice(start, end);
     }, [filteredData, currentPage, itemsPerPage]);
+
+    // console.log("paginatedData: " + JSON.stringify(paginatedData));
 
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
@@ -58,21 +70,20 @@ export default function Invoice() {
 
     return (
         <div className="h-screen flex flex-col overflow-hidden font-sans bg-gray-50">
-            {/* ==== HEADER – CỐ ĐỊNH ==== */}
+            {/* HEADER */}
             <div className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50">
                 <Header />
             </div>
 
-            {/* ==== BODY ==== */}
+            {/* BODY */}
             <div className="flex flex-1 pt-16 overflow-hidden">
-                {/* ==== SIDEBAR – CỐ ĐỊNH ==== */}
+                {/* SIDEBAR */}
                 <div className="fixed top-16 bottom-0 left-0 w-20 bg-white border-r border-gray-200 z-40 ml-2">
                     <Sidebar />
                 </div>
 
                 {/* ==== MAIN CONTENT – KHÔNG CUỘN TOÀN TRANG ==== */}
                 <main className="flex-1 ml-24 flex flex-col overflow-hidden p-6">
-                    <CreateInvoiceForm />
                     {/* ==== KHỐI BẢNG – CHỈ PHẦN NÀY CUỘN ==== */}
                     <div className="flex-1 p-6 mt-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
                         <h2 className="text-3xl font-bold text-gray-700 mb-5 text-left">Danh sách hóa đơn</h2>
@@ -111,62 +122,97 @@ export default function Invoice() {
                         {/* Tiêu đề bảng (cố định trong khung) */}
                         <div className="flex flex-col items-center justify-start flex-1 overflow-hidden bg-gray-50">
                             <div className="w-[100%] overflow-y-auto h-[650px] scrollbar-hidden rounded-lg shadow-sm bg-white">
-                                <table className="min-w-full text-center border-collapse">
+                                <table className="min-w-full text-left border-collapse">
                                     <thead className="bg-gray-100 sticky top-0 z-10">
                                         <tr>
-                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700">Mã hóa đơn</th>
-                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700">Tên bệnh nhân</th>
-                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700">Người tạo</th>
-                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700">Tổng tiền</th>
-                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700">Trạng thái</th>
-                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700">Hành động</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-center w-[80px]">TT</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-left">Tên bệnh nhân</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-left">Người tạo</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-left">Ngày tạo</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-left">Loại hóa đơn</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-right w-[250px]">Tổng tiền</th>
+                                            <th className="px-6 py-4 text-2xl font-bold text-gray-700 text-center">Hành động</th>
                                         </tr>
                                     </thead>
 
                                     <tbody className="divide-y divide-gray-200">
-                                        {paginatedData.length > 0 ? (
-                                            paginatedData.map((item) => (
+                                        {dataInvoiceToday.length > 0 ? (
+                                            dataInvoiceToday.map((item, index) => (
                                                 <tr key={item.id} className="hover:bg-gray-50 transition duration-200">
-                                                    <td className="px-8 py-5 text-xl text-gray-700">{item.id}</td>
-                                                    <td className="px-8 py-5 text-xl text-gray-700">{item.patient}</td>
-                                                    <td className="px-8 py-5 text-xl text-gray-700">{item.created_by}</td>
-                                                    <td className="px-8 py-5 text-xl text-gray-700">{item.total_amount}</td>
-                                                    <td className="px-8 py-5 text-xl text-gray-700">{item.payment_status}</td>
-                                                    <td className="px-8 py-5 flex justify-center gap-6">
-                                                        {/* Nút Edit */}
-                                                        <button className="flex items-center text-teal-600 hover:text-teal-700 cursor-pointer transition">
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                strokeWidth={2}
-                                                                stroke="currentColor"
-                                                                className="w-6 h-6 mr-2"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    d="M16.862 3.487a2.1 2.1 0 012.97 2.97L8.062 18.228a4.5 4.5 0 01-1.897 1.128l-3.004.857a.75.75 0 01-.928-.928l.857-3.004a4.5 4.5 0 011.128-1.897L16.862 3.487z"
-                                                                />
-                                                            </svg>
-                                                            <span className="text-xl font-semibold">Sửa</span>
-                                                        </button>
 
-                                                        {/* Nút Delete */}
-                                                        <button className="flex items-center text-red-500 hover:text-red-600 cursor-pointer transition">
-                                                            <i className="fa-solid fa-trash-can text-red-500 text-base mr-3"></i>
-                                                            <span className="text-xl font-semibold">Xóa</span>
+                                                    {/* TT - căn phải */}
+                                                    <td className="px-8 py-5 text-xl text-gray-700 text-center w-[80px]">
+                                                        {index + 1}
+                                                    </td>
+
+                                                    {/* Tên bệnh nhân - căn trái */}
+                                                    <td className="px-8 py-5 text-xl text-gray-700 text-left">
+                                                        {item.patient_name}
+                                                    </td>
+
+                                                    {/* Người tạo - căn trái */}
+                                                    <td className="px-8 py-5 text-xl text-gray-700 text-left">
+                                                        {item.createdByName}
+                                                    </td>
+
+                                                    {/* Ngày tạo - căn trái */}
+                                                    <td className="px-8 py-5 text-xl text-gray-700 text-left">
+                                                        {item.created_at.slice(0, 10).split('-').reverse().join('-')}
+                                                    </td>
+
+                                                    <td className="px-8 py-5 text-xl text-gray-700 text-left">
+                                                        {item.bill_type === "CLINICAL"
+                                                            ? "Lâm sàng"
+                                                            : item.bill_type === "SERVICE"
+                                                                ? "Dịch vụ"
+                                                                : item.bill_type === "MEDICINE"
+                                                                    ? "Thuốc"
+                                                                    : "Không xác định"}
+                                                    </td>
+
+                                                    {/* Tổng tiền - căn phải */}
+                                                    <td className="px-8 py-5 text-xl text-gray-700 text-right w-[250px]">
+                                                        {Number(item.total).toLocaleString('vi-VN', {
+                                                            style: 'currency',
+                                                            currency: 'VND',
+                                                        })}
+                                                    </td>
+
+                                                    {/* Hành động - căn giữa */}
+                                                    <td className="px-8 py-5 flex justify-center gap-6">
+                                                        <button
+                                                            className={`flex items-center px-4 py-2 rounded-md text-white font-semibold transition
+                                                                        ${item.payment_status?.includes('SUCCESS')
+                                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                                    : 'bg-teal-600 hover:bg-teal-700 cursor-pointer'
+                                                                }`}
+
+                                                            disabled={item.payment_status?.includes('SUCCESS')}
+
+                                                            onClick={async () => {
+                                                                if (!item.payment_status?.includes('SUCCESS')) {
+                                                                    try {
+                                                                        const res = await getDetailBill(item.id);
+                                                                        setDataSelectedInvoice(res);
+                                                                        setShowPaymentMethodForm(true);
+                                                                    } catch (error) {
+                                                                        console.error('Lỗi khi lấy chi tiết hóa đơn:', error);
+                                                                    }
+                                                                }
+                                                            }}
+                                                        >
+                                                            {item.payment_status?.includes('SUCCESS')
+                                                                ? 'Đã thanh toán'
+                                                                : 'Thanh toán'}
                                                         </button>
                                                     </td>
+
 
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td
-                                                    colSpan="5"
-                                                    className="px-8 py-12 text-center text-gray-500 text-base"
-                                                >
+                                                <td colSpan="6" className="px-8 py-12 text-center text-gray-500 text-base">
                                                     Không tìm thấy hóa đơn nào.
                                                 </td>
                                             </tr>
@@ -175,7 +221,6 @@ export default function Invoice() {
                                 </table>
                             </div>
                         </div>
-
 
                         {/* PHÂN TRANG (cố định trong khung bảng) */}
                         <div className="border-t border-gray-200 bg-gray-50 p-4 flex-shrink-0">
@@ -242,6 +287,44 @@ export default function Invoice() {
                     </div>
                 </main>
             </div>
+
+            {/* Form Payment */}
+            {showPaymentMethodForm && dataSelectedInvoice &&
+                createPortal(
+                    <PaymentMethodForm
+                        bill={dataSelectedInvoice}
+                        onSubmit={async ({ dto, method }) => {
+                            try {
+                                if (method === "CASH") {
+                                    // Gọi API thanh toán tiền mặt
+                                    const res = await paymentCash(dto);
+                                    console.log("Thanh toán tiền mặt thành công!", res);
+
+                                    // Reload danh sách hóa đơn
+                                    const updated = await getAllBillToday();
+                                    setDataInvoiceToday(updated);
+                                }
+                                else if (method === "BANK_TRANSFER") {
+                                    // VietQR thanh toán đã được xử lý trong CreateVietQRModal
+                                    // và onSuccess callback sẽ gọi onSubmit khi thanh toán thành công
+                                    console.log("Thanh toán chuyển khoản VietQR thành công!");
+
+                                    // Reload danh sách hóa đơn
+                                    const updated = await getAllBillToday();
+                                    setDataInvoiceToday(updated);
+                                }
+
+                                setShowPaymentMethodForm(false);
+                            } catch (error) {
+                                console.error("Lỗi thanh toán:", error);
+                                alert("Lỗi thanh toán: " + (error.response?.data?.message || error.message));
+                            }
+                        }}
+                        onClose={() => setShowPaymentMethodForm(false)}
+                    />,
+                    document.body
+                )
+            }
         </div>
     );
 }
