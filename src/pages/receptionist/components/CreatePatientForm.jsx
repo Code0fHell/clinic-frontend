@@ -57,7 +57,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white w-[900px] rounded-2xl shadow-xl p-6 relative overflow-y-auto max-h-[90vh]">
+            <div className="bg-white w-[900px] rounded-2xl shadow-xl p-5 relative">
                 {/* Nút đóng */}
                 {onClose && (
                     <button
@@ -87,7 +87,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
                     {/* Thông tin bệnh nhân */}
-                    <div className="space-y-4 border-r border-gray-200 pr-6">
+                    <div className="space-y-2 border-r border-gray-200 pr-6">
                         <h3 className="text-lg font-semibold text-teal-700 border-b border-gray-200 pb-1">
                             Thông tin bệnh nhân
                         </h3>
@@ -196,7 +196,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                     </div>
 
                     {/* Cột phải: Thông tin gia đình & y tế */}
-                    <div className="space-y-4 pl-4">
+                    <div className="space-y-2 pl-4">
                         <h3 className="text-lg font-semibold text-teal-700 border-b border-gray-200 pb-1">
                             Thông tin gia đình & sức khỏe
                         </h3>
@@ -271,13 +271,20 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                 </form>
 
                 {/* Nút tạo */}
-                <div className="flex justify-end mt-6">
+                <div className="flex justify-end space-x-3 pt-4">
                     <button
                         type="submit"
                         onClick={handleSubmit}
-                        className="bg-[#008080] hover:bg-teal-700 cursor-pointer text-white font-semibold px-6 py-3 rounded-lg shadow-md transition"
+                        className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition cursor-pointer"
                     >
-                        Tạo bệnh nhân
+                        Tạo hóa đơn
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition cursor-pointer"
+                    >
+                        Đóng
                     </button>
                 </div>
             </div>

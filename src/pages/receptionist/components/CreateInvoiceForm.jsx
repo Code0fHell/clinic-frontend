@@ -13,14 +13,26 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
 
     useEffect(() => {
         if (visit) {
+            console.log("DEBUG: visit object:", visit);
+
+            let total = "";
+            // Lấy clinical_fee từ visit object (được set từ selectedVisit ở Parent)
+            const clinicalFee = visit.clinical_fee || "";
+
+            console.log("DEBUG: clinicalFee found:", clinicalFee);
+
+            if (clinicalFee) {
+                total = Number(clinicalFee);
+            }
+
             setFormData({
                 patient_id: visit.patient?.id || "",
                 bill_type: "CLINICAL",
                 doctor_id: visit.doctor?.id || "",
-                medical_ticket_id: visit.medicalTicketId || "",
+                medical_ticket_id: visit.medicalTicketId || visit.id || "",
                 indication_ticket_id: "",
                 prescription_id: "",
-                total: "",
+                total: total,
             });
         }
     }, [visit]);
@@ -28,12 +40,40 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
     // Xử lý thay đổi input
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        let updatedData = { ...formData };
+
+        // Convert total thành number
+        if (name === "total") {
+            updatedData[name] = value ? Number(value) : "";
+        } else {
+            updatedData[name] = value;
+        }
+
+        // Nếu đổi bill_type sang CLINICAL, auto-fill total từ clinical_fee
+        if (name === "bill_type" && value === "CLINICAL") {
+            const clinicalFee = visit?.clinical_fee;
+
+            if (clinicalFee) {
+                updatedData.total = Number(clinicalFee);
+            }
+        }
+
+        setFormData(updatedData);
     };
 
     // Gửi dữ liệu tạo hóa đơn
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Convert total to number
+        const totalAmount = formData.total ? Number(formData.total) : 0;
+
+        // Validation: kiểm tra total có dữ liệu
+        if (!totalAmount || totalAmount <= 0) {
+            alert("❌ Lỗi: Tổng tiền không được để trống hoặc phải > 0\n\nNếu loại hóa đơn là 'Lâm sàng', vui lòng kiểm tra phí khám bệnh trong phiếu khám.");
+            return;
+        }
 
         const payload = {
             patient_id: formData.patient_id,
@@ -45,10 +85,11 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                 formData.bill_type === "SERVICE" ? formData.indication_ticket_id : null,
             prescription_id:
                 formData.bill_type === "MEDICINE" ? formData.prescription_id : null,
-            total: formData.total || 0
+            total: totalAmount
         };
 
         console.log("Payload gửi BE:", payload);
+        console.log("Total type:", typeof payload.total, "Value:", payload.total);
         onSubmit?.(payload);
     };
 
@@ -67,7 +108,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white w-[600px] rounded-2xl shadow-lg p-8 relative">
+            <div className="bg-white w-[600px] rounded-2xl shadow-lg p-6 relative">
                 {/* Nút đóng */}
                 <button
                     onClick={onClose}
@@ -81,7 +122,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
 
                 <h2 className="text-2xl font-bold text-gray-800 mb-8 text-left">Phiếu hóa đơn</h2>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Tên bệnh nhân */}
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Tên bệnh nhân</label>
@@ -141,19 +182,35 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                         />
                     </div>
 
-
                     {/* Tổng tiền */}
                     <div>
-                        <label className="block text-gray-700 font-medium mb-1">Tổng tiền <span className="text-red-500">*</span></label>
+                        <label className="block text-gray-700 font-medium mb-1">
+                            Tổng tiền <span className="text-red-500">*</span>
+                            {formData.bill_type === "CLINICAL" && formData.total && (
+                                <span className="text-green-600 ml-2">✓</span>
+                            )}
+                        </label>
                         <input
                             type="number"
                             name="total"
                             value={formData.total}
                             onChange={handleChange}
-                            placeholder="Nhập tổng tiền"
+                            placeholder={formData.bill_type === "CLINICAL" ? "Tự động từ phí khám bệnh" : "Nhập tổng tiền"}
+                            disabled={formData.bill_type === "CLINICAL"}
+                            className={`w-full border rounded-lg px-4 py-2 ${formData.bill_type === "CLINICAL"
+                                ? "bg-gray-100 cursor-not-allowed border-gray-300"
+                                : "border-gray-300"
+                                }`}
                             required
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                            min="1"
                         />
+                        {formData.bill_type === "CLINICAL" && (
+                            <p className="text-sm text-gray-500 mt-1">
+                                {formData.total
+                                    ? `Phí khám bệnh: ${Number(formData.total).toLocaleString("vi-VN")} ₫`
+                                    : "⚠️ Lỗi: Phí khám bệnh không có dữ liệu"}
+                            </p>
+                        )}
                     </div>
 
                     {/* Nút hành động */}

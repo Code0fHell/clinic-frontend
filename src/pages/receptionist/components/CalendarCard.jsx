@@ -37,6 +37,9 @@ export default function CalendarCard() {
         ? `Hôm nay: ${format(today, "dd/MM/yyyy")}`
         : "";
 
+    // Hiển thị xem tháng hiện tại có trùng với tháng của 'today' không
+    const viewIsCurrentMonth = isSameMonth(today, currentDate);
+
     // Tính ô trống đầu tháng (bắt đầu từ T.2)
     const startDayIndex = getDay(monthStart);
     const leadingEmptyCells = startDayIndex === 0 ? 6 : startDayIndex - 1;
@@ -68,35 +71,32 @@ export default function CalendarCard() {
     const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-            {/* Header: Tháng + Hôm nay + Nút */}
-            <div className="flex justify-between items-center mb-5 px-2">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-800">{monthYear}</h2>
-                </div>
+        <div className="bg-white rounded-2xl shadow-sm p-3 max-h-[260px]">
+            <div className="flex justify-between items-center mb-3 px-2">
+                <h2 className="text-lg font-bold text-gray-800">{monthYear}</h2>
+
                 <div className="flex space-x-1">
                     <button
                         onClick={goToPrevMonth}
                         className="p-1 text-gray-400 hover:text-teal-600 transition-colors cursor-pointer rounded-full hover:bg-gray-100"
-                        aria-label="Tháng trước"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
+
                     <button
                         onClick={goToNextMonth}
                         className="p-1 text-gray-400 hover:text-teal-600 transition-colors cursor-pointer rounded-full hover:bg-gray-100"
-                        aria-label="Tháng sau"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                 </div>
             </div>
-            {/* Thứ: T.2 → CN – CÙNG 1 DÒNG */}
-            <div className="flex justify-between text-base font-medium text-gray-600 mb-3 px-1">
+
+            <div className="flex justify-between text-sm font-medium text-gray-600 mb-2 px-1">
                 {SHORT_DAYS.map((day) => (
                     <span key={day} className="flex-1 text-center">
                         {day}
@@ -104,16 +104,16 @@ export default function CalendarCard() {
                 ))}
             </div>
 
-            {/* Lịch */}
             <div className="grid grid-cols-7 gap-y-1">
                 {calendarDays.map((day, index) => {
                     const isCurrentDay = isToday(day.date);
                     const isCurrentMonth = day.isCurrentMonth;
+                    const dimClass = viewIsCurrentMonth ? "" : "opacity-60";
 
                     return (
                         <div key={index} className="flex justify-center">
                             <div
-                                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-colors ${isCurrentDay
+                                className={`w-6 h-6 flex items-center justify-center rounded-full text-[11px] font-medium transition-colors ${dimClass} ${isCurrentDay
                                     ? "bg-teal-600 text-white font-bold"
                                     : isCurrentMonth
                                         ? "text-gray-700 hover:bg-gray-100"
@@ -127,5 +127,6 @@ export default function CalendarCard() {
                 })}
             </div>
         </div>
+
     );
 }
