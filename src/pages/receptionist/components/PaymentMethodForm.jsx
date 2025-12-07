@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import CreateVietQRModal from "../../../components/modals/CreateVietQRModal";
 
 export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
     const [method, setMethod] = useState("CASH");
+    const [showVietQRModal, setShowVietQRModal] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -11,6 +13,12 @@ export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
             bill_id: bill?.id,
             amount: Number(bill?.total),
         };
+
+        // Nếu chọn chuyển khoản, hiển thị modal VietQR
+        if (method === "BANK_TRANSFER") {
+            setShowVietQRModal(true);
+            return;
+        }
 
         onSubmit?.({ dto, method });
     };
@@ -25,7 +33,7 @@ export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
                 <button
                     onClick={onClose}
                     type="button"
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100 cursor-pointer"
                 >
                     <svg
                         className="w-6 h-6"
@@ -70,7 +78,7 @@ export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
                             <select
                                 value={method}
                                 onChange={(e) => setMethod(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#008080] outline-none"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#008080] outline-none cursor-pointer:hover"
                             >
                                 <option value="CASH">💵 Tiền mặt</option>
                                 <option value="BANK_TRANSFER">🏦 Chuyển khoản</option>
@@ -82,20 +90,40 @@ export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
                     <div className="flex justify-end space-x-3 pt-2">
                         <button
                             type="submit"
-                            className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+                            className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition hover:cursor-pointer"
                         >
                             Xác nhận
                         </button>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
+                            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition hover:cursor-pointer"
                         >
                             Hủy
                         </button>
                     </div>
                 </form>
             </div>
+
+            {/* VietQR Modal - hiển thị khi chọn BANK_TRANSFER */}
+            {showVietQRModal && bill && (
+                <CreateVietQRModal
+                    billId={bill.id}
+                    amount={Number(bill.total)}
+                    onSuccess={(data) => {
+                        console.log('VietQR payment success:', data);
+                        // Gọi callback onSubmit sau khi thanh toán thành công
+                        const dto = {
+                            bill_id: bill.id,
+                            amount: Number(bill.total),
+                        };
+                        onSubmit?.({ dto, method: "BANK_TRANSFER" });
+                        setShowVietQRModal(false);
+                        onClose?.();
+                    }}
+                    onClose={() => setShowVietQRModal(false)}
+                />
+            )}
         </div>
     );
 }
