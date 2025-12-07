@@ -6,7 +6,7 @@ import { getTodayAppointments } from "../../api/appointment.api";
 import { createVisit } from "../../api/visit.api";
 import { createMedicalTicket } from "../../api/medical-ticket.api";
 import { createBill } from "../../api/bill.api";
-import { createVietQRPayment } from "../../api/payment.api";
+import { createVietQR } from "../../api/payment.api";
 import Toast from "../../components/modals/Toast";
 
 export default function Appointment() {
@@ -103,7 +103,7 @@ export default function Appointment() {
             if (!amount) {
                 throw new Error("Phí khám chưa được thiết lập");
             }
-            const payment = await createVietQRPayment({
+            const payment = await createVietQR({
                 bill_id: billInfo.id,
                 amount,
             });
