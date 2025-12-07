@@ -20,6 +20,11 @@ import TaskPage from './pages/receptionist/Task';
 import PrivateRoute from './routes/PrivateRoute';
 import ProfilePage from './pages/profile/ProfilePage';
 
+import LabDoctorDashBoardPage from './pages/doctor/lab/LabDoctorDashBoardPage';
+import LabIndicationListPage from './pages/doctor/lab/LabIndicationListPage';
+import LabTestResultPage from './pages/doctor/lab/LabTestResultPage';
+import LabCompletedResultsPage from './pages/doctor/lab/LabCompletedResultsPage';
+
 function App() {
   return (
     <AuthProvider>
@@ -36,6 +41,12 @@ function App() {
           <Route path='/doctor/prescription' element={<DoctorPrescriptionListPage/>}/>
           <Route path='/doctor/prescription/:id' element={<DoctorPrescriptionViewPage/>}/>
           <Route path='/doctor/prescription/:id/edit' element={<DoctorPrescriptionEditPage/>}/>
+
+          {/* lab doctor routes */}
+          <Route path='/lab/dashboard' element={<LabDoctorDashBoardPage/>}/>
+          <Route path='/lab/indications' element={<LabIndicationListPage/>}/>
+          <Route path='/lab/indication/:id/result' element={<LabTestResultPage/>}/>
+          <Route path='/lab/completed-results' element={<LabCompletedResultsPage/>}/>
 
           {/* Protected routes */}
           <Route element={<PrivateRoute />}>
