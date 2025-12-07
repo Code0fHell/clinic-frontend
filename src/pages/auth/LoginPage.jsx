@@ -47,6 +47,9 @@ const LoginPage = () => {
           case "PATIENT":
             navigate("/patient/home");
             break;
+          case "PHARMACIST":
+            navigate("/pharmacist/home");
+            break;
           case "RECEPTIONIST":
             navigate("/receptionist/home");
             break;

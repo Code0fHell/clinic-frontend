@@ -19,3 +19,21 @@ export const getMedicineById = async (id) => {
   const res = await axiosClient.get(`/medicine/${id}`);
   return res.data;
 };
+
+// Tạo thuốc mới
+export const createMedicine = async (data) => {
+  const res = await axiosClient.post("/medicine", data);
+  return res.data;
+};
+
+// Cập nhật thuốc
+export const updateMedicine = async (id, data) => {
+  const res = await axiosClient.put(`/medicine/${id}`, data);
+  return res.data;
+};
+
+// Xóa thuốc
+export const deleteMedicine = async (id) => {
+  const res = await axiosClient.delete(`/medicine/${id}`);
+  return res.data;
+};
