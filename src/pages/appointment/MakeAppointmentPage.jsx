@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     getClinicalDoctors,
     getWorkSchedules,
@@ -40,6 +40,7 @@ const MakeAppointmentPage = () => {
     const [toast, setToast] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation();
     const token = localStorage.getItem("access_token");
     const isLoggedIn = !!token;
 
@@ -61,7 +62,8 @@ const MakeAppointmentPage = () => {
         if (!selectedDoctor || !selectedDate) return;
         const fetchSchedules = async () => {
             try {
-                const data = await getWorkSchedules(selectedDoctor.id);
+                const data = await getWorkSchedules(selectedDoctor.id, selectedDate);
+                console.log("data: ", data);
                 setSchedules(data || []);
             } catch (err) {
                 console.error("Lỗi tải lịch làm việc:", err);
@@ -74,7 +76,8 @@ const MakeAppointmentPage = () => {
     useEffect(() => {
         if (!selectedDoctor || !selectedDate) return;
         const schedule = schedules.find(
-            (s) => dayjs(s.work_date).format("YYYY-MM-DD") === selectedDate
+            (s) => dayjs(s.work_date).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD") === selectedDate
+
         );
         if (!schedule) {
             setSlots([]);
@@ -91,7 +94,7 @@ const MakeAppointmentPage = () => {
         };
         fetchSlots();
     }, [selectedDoctor, selectedDate, schedules]);
-    console.log("slots: ", slots)
+    console.log("slots: ", slots);
     // Date options: today, tomorrow, day after
     const dateOptions = [0, 1, 2].map((offset) => {
         const date = dayjs().add(offset, "day");
@@ -120,7 +123,6 @@ const MakeAppointmentPage = () => {
         // Nếu slot ở tương lai => luôn hiển thị
         return dayjs.utc(slot.slot_end).isAfter(dayjs.utc());
     });
-
 
     // Handle booking
     const handleBook = async (e) => {
@@ -174,8 +176,7 @@ const MakeAppointmentPage = () => {
     };
 
     // Vietnam timezone helper
-    const toVNTime = (date) =>
-    dayjs(date).format("HH:mm");
+    const toVNTime = (date) => dayjs(date).format("HH:mm");
 
     // Handle Other Date selection
     const handleOtherDateChange = (date) => {
@@ -444,7 +445,9 @@ const MakeAppointmentPage = () => {
                                                     : ""
                                             }`}
                                         >
-                                            {dayjs.utc(slot.slot_start).format("HH:mm")}
+                                            {dayjs
+                                                .utc(slot.slot_start)
+                                                .format("HH:mm")}
                                         </button>
                                     ))
                                 ) : (
