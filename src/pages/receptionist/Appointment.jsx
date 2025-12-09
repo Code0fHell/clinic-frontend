@@ -190,7 +190,7 @@ export default function Appointment() {
 
                 <main className="flex-1 ml-24 flex flex-col overflow-hidden p-6">
                     <div className="flex-1 p-6 mt-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                        <h2 className="text-3xl font-bold text-gray-700 mb-5 text-left">Danh sách lịch hẹn hôm nay</h2>
+                        <h2 className="text-3xl font-bold text-gray-700 mb-5 text-left">Danh sách lịch hẹn</h2>
 
                         <div className="mb-4">
                             <div className="relative w-full">
