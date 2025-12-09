@@ -572,7 +572,9 @@ export default function Patient() {
                                         <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_gender === "NU" ? "Nữ" : "Nam"}</td>
                                         <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_phone}</td>
                                         <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_address}</td>
-                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_dob.slice(0, 10).split('-').reverse().join('-')}</td>
+                                        <td className="px-4 py-3 text-left align-middle truncate">{patient.patient_dob
+                                        ? patient.patient_dob.slice(0, 10).split("-").reverse().join("-")
+                                        : "Không rõ"}</td>
                                         <td className="px-4 py-3 text-left align-middle whitespace-nowrap">
                                             <button
                                                 className="text-teal-600 hover:text-teal-800 cursor-pointer mr-3 text-sm font-medium transition"

@@ -38,6 +38,11 @@ import LabIndicationListPage from './pages/doctor/lab/LabIndicationListPage';
 import LabTestResultPage from './pages/doctor/lab/LabTestResultPage';
 import LabCompletedResultsPage from './pages/doctor/lab/LabCompletedResultsPage';
 
+import DiagnosticDoctorDashBoardPage from './pages/doctor/diagnostic/DiagnosticDoctorDashBoardPage';
+import DiagnosticIndicationListPage from './pages/doctor/diagnostic/DiagnosticIndicationListPage';
+import DiagnosticImageResultPage from './pages/doctor/diagnostic/DiagnosticImageResultPage';
+import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/DiagnosticCompletedResultsPage';
+
 function App() {
     return (
         <AuthProvider>
