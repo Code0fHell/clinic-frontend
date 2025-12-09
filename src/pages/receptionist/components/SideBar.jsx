@@ -12,9 +12,9 @@ export default function Sidebar() {
     const menuItems = [
         { icon: LayoutGrid, path: "/receptionist/home", tooltip: "Trang chủ" },
         { icon: Calendar, path: "/receptionist/appointment", tooltip: "Lịch hẹn" },
+        { icon: ClipboardCheck, path: "/receptionist/visit", tooltip: "Thăm khám" },
         { icon: Users, path: "/receptionist/patient", tooltip: "Bệnh nhân" },
         { icon: FileText, path: "/receptionist/invoice", tooltip: "Hóa đơn" },
-        { icon: ClipboardCheck, path: "/receptionist/task", tooltip: "Công việc" },
     ];
 
     return (

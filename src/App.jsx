@@ -79,15 +79,15 @@ function App() {
                         path="/doctor/prescription/:id/edit"
                         element={<DoctorPrescriptionEditPage />}
                     />
-                    
+
                     {/* Protected routes */}
                     <Route element={<PrivateRoute />}>
                         {/* lab doctor routes */}
-                        <Route path='/lab/dashboard' element={<LabDoctorDashBoardPage/>}/>
-                        <Route path='/lab/indications' element={<LabIndicationListPage/>}/>
-                        <Route path='/lab/indication/:id/result' element={<LabTestResultPage/>}/>
-                        <Route path='/lab/completed-results' element={<LabCompletedResultsPage/>}/>
-                        
+                        <Route path='/lab/dashboard' element={<LabDoctorDashBoardPage />} />
+                        <Route path='/lab/indications' element={<LabIndicationListPage />} />
+                        <Route path='/lab/indication/:id/result' element={<LabTestResultPage />} />
+                        <Route path='/lab/completed-results' element={<LabCompletedResultsPage />} />
+
                         <Route
                             path="/receptionist/home"
                             element={<ReceptionistDashboard />}
@@ -97,16 +97,16 @@ function App() {
                             element={<AppointmentPage />}
                         />
                         <Route
+                            path="/receptionist/visit"
+                            element={<TaskPage />}
+                        />
+                        <Route
                             path="/receptionist/patient"
                             element={<PatientPage />}
                         />
                         <Route
                             path="/receptionist/invoice"
                             element={<InvoicePage />}
-                        />
-                        <Route
-                            path="/receptionist/task"
-                            element={<TaskPage />}
                         />
                         <Route
                             path="/pharmacist/home"
