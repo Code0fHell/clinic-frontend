@@ -277,7 +277,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                         onClick={handleSubmit}
                         className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition cursor-pointer"
                     >
-                        Tạo hóa đơn
+                        Thêm bệnh nhân
                     </button>
                     <button
                         type="button"
