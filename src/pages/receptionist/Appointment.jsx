@@ -1,12 +1,9 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import CreateVisitForm from "./components/CreateVisitForm";
 import { getTodayAppointments } from "../../api/appointment.api";
 import { createVisit } from "../../api/visit.api";
-import { createMedicalTicket } from "../../api/medical-ticket.api";
-import { createBill } from "../../api/bill.api";
-import { createVietQR } from "../../api/payment.api";
 import Toast from "../../components/modals/Toast";
 
 export default function Appointment() {
@@ -15,14 +12,12 @@ export default function Appointment() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [creatingVisit, setCreatingVisit] = useState(false);
-    const [ticketModal, setTicketModal] = useState(null);
-    const [billInfo, setBillInfo] = useState(null);
-    const [paymentInfo, setPaymentInfo] = useState(null);
     const [toast, setToast] = useState({
         show: false,
         message: "",
         type: "success",
     });
+    const dateInputRef = useRef(null);
 
     const showToast = (message, type = "success") => {
         setToast({ show: true, message, type });
@@ -35,11 +30,13 @@ export default function Appointment() {
             if (Array.isArray(res)) {
                 setAppointments(res);
             } else if (res?.data) {
-                setAppointments(res.data);
+                setAppointments(res.data || res);
             } else {
-                throw new Error("Dữ liệu không hợp lệ");
+                setAppointments([]);
             }
+
             setError(null);
+            setCurrentPage(1);
         } catch (err) {
             console.error("Lỗi khi tải lịch hẹn:", err);
             setError("Không thể tải danh sách lịch hẹn");
@@ -47,6 +44,20 @@ export default function Appointment() {
             setLoading(false);
         }
     }, []);
+
+    // console.log("appointments: " + appointments);
+
+    const openDatePicker = () => {
+        if (!dateInputRef.current) return;
+
+        if (dateInputRef.current.showPicker) {
+            // Chrome, Edge
+            dateInputRef.current.showPicker();
+        } else {
+            // Firefox fallback
+            dateInputRef.current.focus();
+        }
+    };
 
     useEffect(() => {
         fetchAppointments();
@@ -60,10 +71,6 @@ export default function Appointment() {
             if (!visitEntity?.id) {
                 throw new Error("Không xác định được ID lượt khám vừa tạo");
             }
-            const ticket = await createMedicalTicket(visitEntity.id);
-            setTicketModal(ticket);
-            setBillInfo(null);
-            setPaymentInfo(null);
             showToast("Đã tạo lượt khám và phiếu khám thành công");
             setSelectedAppointment(null);
             await fetchAppointments();
@@ -76,59 +83,26 @@ export default function Appointment() {
         }
     };
 
-    const handleCreateBillFromTicket = async () => {
-        if (!ticketModal) return;
-        try {
-            const bill = await createBill({
-                bill_type: "CLINICAL",
-                patient_id: ticketModal.patient_id,
-                medical_ticket_id: ticketModal.ticket_id,
-            });
-            setBillInfo(bill);
-            showToast("Đã tạo hóa đơn khám", "success");
-        } catch (err) {
-            console.error("Lỗi tạo hóa đơn:", err);
-            const message = err?.response?.message || err?.message || "Không thể tạo hóa đơn";
-            showToast(message, "error");
-        }
-    };
-
-    const handleCreatePaymentFromBill = async () => {
-        if (!ticketModal || !billInfo) return;
-        try {
-            const amount =
-                Number(ticketModal.clinical_fee) ||
-                Number(billInfo.total) ||
-                0;
-            if (!amount) {
-                throw new Error("Phí khám chưa được thiết lập");
-            }
-            const payment = await createVietQR({
-                bill_id: billInfo.id,
-                amount,
-            });
-            setPaymentInfo(payment);
-            showToast("Đã tạo mã QR thanh toán", "success");
-        } catch (err) {
-            console.error("Lỗi tạo QR:", err);
-            const message = err?.response?.message || err?.message || "Không thể tạo mã QR";
-            showToast(message, "error");
-        }
-    };
-
     // --- Bộ lọc tìm kiếm, phân trang ---
     const [searchTerm, setSearchTerm] = useState("");
+    const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().slice(0, 10)); // yyyy-mm-dd
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(6);
     const pageSizeOptions = [5, 10, 25, 50, 100];
 
     const filteredData = useMemo(() => {
-        return appointments.filter((item) =>
-            (item.patient?.patient_full_name || "Không có tên")
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase())
-        );
-    }, [appointments, searchTerm]);
+        return appointments.filter((item) => {
+            const name = (item.patient?.patient_full_name || "Không có tên").toLowerCase();
+            const nameMatch = name.includes(searchTerm.toLowerCase());
+
+            if (!dateFilter) return nameMatch;
+
+            const itemDate = item.scheduled_date ? new Date(item.scheduled_date).toISOString().slice(0, 10) : null;
+            const dateMatch = itemDate === dateFilter;
+
+            return nameMatch && dateMatch;
+        });
+    }, [appointments, searchTerm, dateFilter]);
 
     const paginatedData = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
@@ -178,25 +152,64 @@ export default function Appointment() {
 
     /* ---------- RENDER ---------- */
     return (
-        <div className="h-screen flex flex-col overflow-hidden font-sans bg-gray-50">
+        <div className="h-screen bg-gray-50 font-sans flex flex-col overflow-hidden">
             <div className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50">
                 <Header />
             </div>
 
             <div className="flex flex-1 pt-16 overflow-hidden">
-                <div className="fixed top-16 bottom-0 left-0 w-20 bg-white border-r border-gray-200 z-40 ml-2">
+                <div className="fixed top-16 bottom-0 left-0 w-18 bg-white border-r border-gray-200 z-40 ml-2">
                     <Sidebar />
                 </div>
 
-                <main className="flex-1 ml-24 flex flex-col overflow-hidden p-6">
-                    <div className="flex-1 p-6 mt-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                        <h2 className="text-3xl font-bold text-gray-700 mb-5 text-left">Danh sách lịch hẹn</h2>
+                <main className="flex-1 ml-24 flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                        <h2 className="text-2xl font-bold text-gray-700 mb-3 text-left">Danh sách lịch hẹn</h2>
 
-                        <div className="mb-4">
-                            <div className="relative w-full">
+                        <div className="mb-2 flex items-center gap-4">
+                            {/* Date filter */}
+                            <div className="flex items-center">
+                                <div
+                                    onClick={openDatePicker}
+                                    className="relative inline-flex items-center bg-white border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-700 cursor-pointer hover:bg-gray-50">
+
+                                    <svg
+                                        className="w-5 h-5 mr-2 text-gray-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                        />
+                                    </svg>
+
+                                    <span className="mr-2 select-none">
+                                        {new Date(dateFilter).toLocaleDateString("vi-VN")}
+                                    </span>
+
+                                    <input
+                                        max={new Date().toISOString().slice(0, 10)}
+                                        ref={dateInputRef}
+                                        type="date"
+                                        value={dateFilter}
+                                        onChange={(e) => {
+                                            setDateFilter(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Search input */}
+                            <div className="relative flex-1">
                                 <input
                                     type="text"
-                                    placeholder="Tìm kiếm theo tên bệnh nhân"
+                                    placeholder="Tìm kiếm theo tên hoặc số điện thoại"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-base
@@ -220,82 +233,155 @@ export default function Appointment() {
                         </div>
 
                         {/* --- Bảng hiển thị dữ liệu --- */}
-                        <div className="flex flex-col items-center justify-start flex-1 overflow-hidden bg-gray-50">
-                            <div className="w-[100%] overflow-y-auto h-[650px] scrollbar-hidden rounded-lg shadow-sm bg-white">
-                                {loading ? (
-                                    <div className="text-center py-10 text-gray-500 text-xl">Đang tải dữ liệu...</div>
-                                ) : error ? (
-                                    <div className="text-center py-10 text-red-500 text-xl">{error}</div>
-                                ) : (
-                                    <table className="min-w-full text-center border-collapse">
-                                        <thead className="bg-gray-100 sticky top-0 z-10">
-                                            <tr>
-                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Tên bệnh nhân</th>
-                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Bác sĩ</th>
-                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Thời gian</th>
-                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Lý do</th>
-                                                <th className="px-6 py-4 text-2xl text-left font-bold text-gray-700">Hành động</th>
-                                            </tr>
-                                        </thead>
+                        <div className="border border-gray-200 rounded-lg overflow-hidden flex-1 bg-white">
+                            {loading ? (
+                                <div className="text-center py-10 text-gray-500 text-xl">
+                                    Đang tải dữ liệu...
+                                </div>
+                            ) : error ? (
+                                <div className="text-center py-10 text-red-500 text-xl">
+                                    {error}
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <div className="relative max-h-[450px] overflow-y-scroll scrollbar-hidden">
+                                        <table className="min-w-full table-fixed text-sm border-collapse">
+                                            {/* ===== THEAD ===== */}
+                                            <thead>
+                                                <tr>
+                                                    <th className="w-12 px-2 py-2 text-right bg-gray-100 text-sm font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        STT
+                                                    </th>
 
-                                        <tbody className="divide-y divide-gray-200">
-                                            {paginatedData.length > 0 ? (
-                                                paginatedData.map((item) => (
-                                                    <tr key={item.id} className="hover:bg-gray-50 transition duration-200">
-                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
-                                                            {item.patient?.user.full_name || "Chưa có tên"}
-                                                        </td>
-                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
-                                                            {item.doctor?.user.full_name || "Không rõ"}
-                                                        </td>
-                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
-                                                            {formatDateTime(item.scheduled_date)}{" "}
-                                                            <span className="text-gray-500 text-base italic">
-                                                                ({item.session === "MORNING" ? "Sáng" : "Chiều"})
-                                                            </span>
-                                                        </td>
+                                                    <th className="w-[180px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Bệnh nhân
+                                                    </th>
 
-                                                        <td className="px-8 py-5 text-left text-xl text-gray-700">
-                                                            {item.reason || "—"}
-                                                        </td>
-                                                        <td>
-                                                            {item.status !== 'pending' ? (
+                                                    <th className="w-[90px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Giới tính
+                                                    </th>
+
+                                                    <th className="w-[130px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Số ĐT
+                                                    </th>
+
+                                                    <th className="w-[160px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Bác sĩ
+                                                    </th>
+
+                                                    <th className="w-[180px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Thời gian
+                                                    </th>
+
+                                                    <th className="w-[200px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Lý do
+                                                    </th>
+
+                                                    <th className="w-[180px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-gray-200">
+                                                        Thao tác
+                                                    </th>
+                                                </tr>
+                                            </thead>
+
+                                            {/* ===== TBODY ===== */}
+                                            <tbody className="text-gray-700 divide-y divide-gray-200">
+                                                {paginatedData.length > 0 ? (
+                                                    paginatedData.map((item, index) => (
+                                                        <tr
+                                                            key={item.id}
+                                                            className="text-[15px] hover:bg-gray-50 transition-colors"
+                                                        >
+                                                            {/* STT */}
+                                                            <td className="w-12 px-2 py-2 text-right border-r border-gray-200">
+                                                                {index + 1}
+                                                            </td>
+
+                                                            {/* Bệnh nhân */}
+                                                            <td className="w-[180px] px-3 py-2 truncate border-r border-gray-200">
+                                                                {item.patient?.user.full_name || "Chưa có tên"}
+                                                            </td>
+
+                                                            {/* Giới tính */}
+                                                            <td className="w-[90px] px-3 py-2 border-r border-gray-200">
+                                                                {item.patient?.user.gender === "NAM" ? "Nam" : "Nữ" || "—"}
+                                                            </td>
+
+                                                            {/* Số ĐT */}
+                                                            <td className="w-[130px] px-3 py-2 border-r border-gray-200">
+                                                                {item.patient?.user.phone || "—"}
+                                                            </td>
+
+                                                            {/* Bác sĩ */}
+                                                            <td className="w-[160px] px-3 py-2 truncate border-r border-gray-200">
+                                                                {item.doctor?.user.full_name || "Không rõ"}
+                                                            </td>
+
+                                                            {/* Thời gian */}
+                                                            <td className="w-[180px] px-3 py-2 border-r border-gray-200">
+                                                                {formatDateTime(item.scheduled_date)}{" "}
+                                                                <span className="text-gray-500 italic text-sm">
+                                                                    ({item.session === "MORNING" ? "Sáng" : "Chiều"})
+                                                                </span>
+                                                            </td>
+
+                                                            {/* Lý do */}
+                                                            <td className="w-[200px] px-3 py-2 truncate border-r border-gray-200">
+                                                                {item.reason || "—"}
+                                                            </td>
+
+                                                            {/* Thao tác */}
+                                                            <td className="w-[180px] px-3 py-2">
                                                                 <button
                                                                     onClick={() =>
                                                                         setSelectedAppointment({
                                                                             ...item,
-                                                                            patient_name: item.patient?.user?.full_name || "Không rõ",
-                                                                            doctor_name: item.doctor?.user?.full_name || "Không rõ",
+                                                                            patient_name:
+                                                                                item.patient?.user?.full_name || "Không rõ",
+                                                                            doctor_name:
+                                                                                item.doctor?.user?.full_name || "Không rõ",
                                                                             patient_id: item.patient?.id,
                                                                             doctor_id: item.doctor?.id,
-                                                                            appointment_id: item.id, // thêm dòng này
+                                                                            appointment_id: item.id,
                                                                         })
                                                                     }
-                                                                    className="bg-[#008080] hover:bg-teal-600 cursor-pointer text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-md text-base"
+                                                                    disabled={item.status !== "PENDING"}
+                                                                    className={`
+                                                hover: cursor-pointer w-full px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition
+                                                ${item.status !== "PENDING"
+                                                                            ? "bg-gray-400 text-white cursor-not-allowed"
+                                                                            : "bg-[#008080] text-white hover:bg-teal-600"}
+                                            `}
                                                                 >
                                                                     Thêm vào thăm khám
                                                                 </button>
-                                                            ) : (
-                                                                <span className="text-gray-500 font-medium">Đã thêm vào thăm khám</span>
-                                                            )}
-
-
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={8}
+                                                            className="px-3 py-6 text-center text-gray-500 text-base"
+                                                        >
+                                                            Không có lịch hẹn nào hôm nay.
                                                         </td>
-
                                                     </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan="5" className="px-8 py-12 text-center text-gray-500 text-base">
-                                                        Không có lịch hẹn nào hôm nay.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
 
                         {selectedAppointment && (
                             <CreateVisitForm
@@ -311,11 +397,11 @@ export default function Appointment() {
                         <div className="border-t border-gray-200 bg-gray-50 p-4 flex-shrink-0">
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xl text-gray-700">Hiển thị:</span>
+                                    <span className="text-sm text-gray-700">Hiển thị:</span>
                                     <select
                                         value={itemsPerPage}
                                         onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                                        className="px-3 py-2 border border-gray-300 rounded-md text-base font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#008080] cursor-pointer"
+                                        className="px-3 py-2 border border-gray-300 rounded-md text-[12px] font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#008080] cursor-pointer"
                                     >
                                         {pageSizeOptions.map((size) => (
                                             <option key={size} value={size}>{size}</option>
@@ -328,12 +414,12 @@ export default function Appointment() {
                                     <button
                                         onClick={() => goToPage(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className={`flex items-center justify-center w-10 h-10 text-base font-semibold transition rounded-md
+                                        className={`flex items-center justify-center w-6 h-6 text-sm font-semibold transition rounded-md
                                             ${currentPage === 1
                                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                                 : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer hover:text-[#008080]"}`}
                                     >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                         </svg>
                                     </button>
@@ -343,7 +429,7 @@ export default function Appointment() {
                                             key={idx}
                                             onClick={() => typeof page === "number" && goToPage(page)}
                                             disabled={page === "..."}
-                                            className={`w-10 h-10 text-base font-semibold flex items-center justify-center transition rounded-md
+                                            className={`w-6 h-6 text-sm font-semibold flex items-center justify-center transition rounded-md
                                                 ${page === currentPage
                                                     ? "bg-[#008080] text-white border border-[#008080]"
                                                     : page === "..."
@@ -357,12 +443,12 @@ export default function Appointment() {
                                     <button
                                         onClick={() => goToPage(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className={`flex items-center justify-center w-10 h-10 text-base font-semibold transition rounded-md
+                                        className={`flex items-center justify-center w-6 h-6 text-sm font-semibold transition rounded-md
                                             ${currentPage === totalPages
                                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                                 : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer hover:text-[#008080]"}`}
                                     >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
                                     </button>
