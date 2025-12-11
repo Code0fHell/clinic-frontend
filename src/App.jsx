@@ -21,7 +21,7 @@ import ReceptionistDashboard from "./pages/receptionist/Dashboard";
 import AppointmentPage from "./pages/receptionist/Appointment";
 import PatientPage from "./pages/receptionist/Patient";
 import InvoicePage from "./pages/receptionist/Invoice";
-import TaskPage from "./pages/receptionist/Task";
+import VisitPage from "./pages/receptionist/Visit";
 import PharmacistDashboard from "./pages/pharmacist/Dashboard";
 import PharmacistMedicines from "./pages/pharmacist/Medicines";
 import PharmacistSchedule from "./pages/pharmacist/Schedule";
@@ -93,6 +93,12 @@ function App() {
                         <Route path='/lab/indication/:id/result' element={<LabTestResultPage />} />
                         <Route path='/lab/completed-results' element={<LabCompletedResultsPage />} />
 
+                        {/* diagnostic doctor routes */}
+                        <Route path='/diagnostic/dashboard' element={<DiagnosticDoctorDashBoardPage />} />
+                        <Route path='/diagnostic/indications' element={<DiagnosticIndicationListPage />} />
+                        <Route path='/diagnostic/indication/:id/result' element={<DiagnosticImageResultPage />} />
+                        <Route path='/diagnostic/completed-results' element={<DiagnosticCompletedResultsPage />} />
+
                         <Route
                             path="/receptionist/home"
                             element={<ReceptionistDashboard />}
@@ -103,7 +109,7 @@ function App() {
                         />
                         <Route
                             path="/receptionist/visit"
-                            element={<TaskPage />}
+                            element={<VisitPage />}
                         />
                         <Route
                             path="/receptionist/patient"
