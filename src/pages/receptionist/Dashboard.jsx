@@ -19,7 +19,7 @@ export default function Dashboard() {
 
             <div className="flex flex-1 pt-15 overflow-hidden">
                 {/* ==== SIDEBAR – CỐ ĐỊNH ==== */}
-                <div className="fixed top-16 bottom-0 left-0 w-20 bg-white border-r border-gray-200 z-40 ml-2">
+                <div className="fixed top-16 bottom-0 left-0 w-18 bg-white border-r border-gray-200 z-40 ml-2">
                     <Sidebar />
                 </div>
 
