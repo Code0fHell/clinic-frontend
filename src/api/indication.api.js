@@ -43,3 +43,9 @@ export const printIndication = async (id) => {
   });
   return res.data;
 };
+
+// Lấy danh sách phiếu chỉ định xét nghiệm hôm nay cho LAB
+export const getTodayLabIndications = async () => {
+  const res = await axiosClient.get("/indication-ticket/lab/today");
+  return res.data;
+};

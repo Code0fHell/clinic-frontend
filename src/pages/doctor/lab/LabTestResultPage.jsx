@@ -5,6 +5,7 @@ import DoctorHeader from "../components/layout/DoctorHeader";
 import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
+import { createLabTestResult } from "../../../api/lab-test-result.api";
 
 const LabTestResultPage = () => {
     const { id } = useParams();
@@ -19,22 +20,24 @@ const LabTestResultPage = () => {
         type: "success",
     });
 
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
     // State cho các trường nhập kết quả
     const [formData, setFormData] = useState({
-        result: "",
         conclusion: "",
         testResults: indication?.serviceItems?.map(item => ({
-            serviceId: item.id,
-            serviceName: item.medical_service.name,
+            serviceIndicationId: item.id,
+            serviceName: item.medical_service.service_name,
+            referenceValue: item.medical_service.reference_value,
             result: "",
-            normalRange: "",
-            unit: "",
         })) || [],
     });
 
-    const handleInputChange = (index, field, value) => {
+    const handleInputChange = (index, value) => {
         const newTestResults = [...formData.testResults];
-        newTestResults[index][field] = value;
+        newTestResults[index].result = value;
         setFormData({ ...formData, testResults: newTestResults });
     };
 
@@ -44,48 +47,51 @@ const LabTestResultPage = () => {
         // Validation
         const hasEmptyResults = formData.testResults.some(test => !test.result);
         if (hasEmptyResults) {
-            setToast({
-                show: true,
-                message: "Vui lòng nhập đầy đủ kết quả xét nghiệm",
-                type: "error",
-            });
+            showToast("Vui lòng nhập đầy đủ kết quả xét nghiệm", "error");
             return;
         }
 
         if (!formData.conclusion) {
-            setToast({
-                show: true,
-                message: "Vui lòng nhập kết luận",
-                type: "error",
-            });
+            showToast("Vui lòng nhập kết luận", "error");
+            return;
+        }
+
+        // Validate số
+        const invalidResults = formData.testResults.filter(test => {
+            const numValue = parseFloat(test.result);
+            return isNaN(numValue);
+        });
+
+        if (invalidResults.length > 0) {
+            showToast("Kết quả xét nghiệm phải là số hợp lệ", "error");
             return;
         }
 
         setLoading(true);
         try {
-            // TODO: tạo api save lab test result
-            // await saveLabTestResult({ indicationId: id, ...formData });
-            
-            // fake api call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Prepare payload
+            const payload = {
+                indication_id: indication.id,
+                patient_id: indication.patient.id,
+                service_results: formData.testResults.map(test => ({
+                    service_indication_id: test.serviceIndicationId,
+                    test_result: parseFloat(test.result),
+                })),
+                conclusion: formData.conclusion,
+            };
 
-            setToast({
-                show: true,
-                message: "Lưu kết quả xét nghiệm thành công",
-                type: "success",
-            });
+            await createLabTestResult(payload);
 
-            // chuyển hướng đến trang kết quả đã xử lý sau 1.5s
+            showToast("Lưu kết quả xét nghiệm thành công", "success");
+
+            // Chuyển hướng đến trang danh sách sau 1.5s
             setTimeout(() => {
-                navigate("/lab/completed-results");
+                navigate("/lab/indications");
             }, 1500);
         } catch (error) {
             console.error("Lỗi khi lưu kết quả xét nghiệm:", error);
-            setToast({
-                show: true,
-                message: "Lỗi khi lưu kết quả xét nghiệm",
-                type: "error",
-            });
+            const message = error.response?.data?.message || "Lỗi khi lưu kết quả xét nghiệm";
+            showToast(message, "error");
         } finally {
             setLoading(false);
         }
@@ -228,49 +234,46 @@ const LabTestResultPage = () => {
                                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
                                     Kết quả xét nghiệm
                                 </h2>
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     {formData.testResults.map((test, index) => (
-                                        <div key={test.serviceId} className="border border-gray-200 rounded-lg p-4">
-                                            <h3 className="font-medium text-gray-800 mb-3">
-                                                {index + 1}. {test.serviceName}
-                                            </h3>
-                                            <div className="grid grid-cols-3 gap-4">
+                                        <div key={test.serviceIndicationId} className="border border-gray-200 rounded-lg p-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="font-medium text-gray-800">
+                                                    {index + 1}. {test.serviceName}
+                                                </h3>
+                                                {test.referenceValue && (
+                                                    <span className="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-full">
+                                                        Giá trị tham chiếu: <span className="font-semibold text-blue-600">{test.referenceValue}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Kết quả <span className="text-red-500">*</span>
+                                                        Kết quả đo được <span className="text-red-500">*</span>
                                                     </label>
                                                     <input
-                                                        type="text"
+                                                        type="number"
+                                                        step="0.01"
                                                         value={test.result}
-                                                        onChange={(e) => handleInputChange(index, "result", e.target.value)}
+                                                        onChange={(e) => handleInputChange(index, e.target.value)}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        placeholder="Nhập kết quả"
+                                                        placeholder="Nhập kết quả (số)"
                                                         required
                                                     />
                                                 </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Đơn vị
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={test.unit}
-                                                        onChange={(e) => handleInputChange(index, "unit", e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        placeholder="VD: mg/dL, g/L"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Giá trị tham chiếu
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={test.normalRange}
-                                                        onChange={(e) => handleInputChange(index, "normalRange", e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        placeholder="VD: 70-110"
-                                                    />
+                                                <div className="flex items-end">
+                                                    {test.referenceValue && test.result && (
+                                                        <div className="text-sm">
+                                                            {parseFloat(test.result) > test.referenceValue ? (
+                                                                <span className="text-red-600 font-medium">⬆ Cao hơn tham chiếu</span>
+                                                            ) : parseFloat(test.result) < test.referenceValue ? (
+                                                                <span className="text-orange-600 font-medium">⬇ Thấp hơn tham chiếu</span>
+                                                            ) : (
+                                                                <span className="text-green-600 font-medium">✓ Bình thường</span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -281,14 +284,14 @@ const LabTestResultPage = () => {
                             {/* Kết luận */}
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Kết luận <span className="text-red-500">*</span>
+                                    Kết luận tổng quát <span className="text-red-500">*</span>
                                 </h2>
                                 <textarea
                                     value={formData.conclusion}
                                     onChange={(e) => setFormData({ ...formData, conclusion: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     rows="4"
-                                    placeholder="Nhập kết luận về kết quả xét nghiệm..."
+                                    placeholder="Nhập kết luận tổng quát về kết quả xét nghiệm của bệnh nhân..."
                                     required
                                 />
                             </div>
@@ -299,6 +302,7 @@ const LabTestResultPage = () => {
                                     type="button"
                                     onClick={() => navigate("/lab/indications")}
                                     className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                                    disabled={loading}
                                 >
                                     Hủy
                                 </button>
@@ -331,4 +335,3 @@ const LabTestResultPage = () => {
 };
 
 export default LabTestResultPage;
-

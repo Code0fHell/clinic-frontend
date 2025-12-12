@@ -1,140 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
 import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
+import { getTodayLabIndications } from "../../../api/indication.api";
 
 const LabIndicationListPage = () => {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [indications, setIndications] = useState([]);
     const [toast, setToast] = useState({
         show: false,
         message: "",
         type: "success",
     });
 
-    // Dữ liệu mẫu - danh sách bệnh nhân được chỉ định xét nghiệm
-    const [indications] = useState([
-        {
-            id: "ind-001",
-            barcode: "IND001234567",
-            patient: {
-                id: "p-001",
-                patient_full_name: "Nguyễn Văn An",
-                patient_dob: "1985-03-15",
-                patient_phone: "0901234567",
-                patient_address: "123 Lê Lợi, Q1, TP.HCM",
-                patient_gender: "Nam",
-            },
-            doctor: {
-                id: "d-001",
-                user: {
-                    full_name: "BS. Trần Thị Bình",
-                },
-            },
-            diagnosis: "Nghi ngờ viêm gan B, cần xét nghiệm chức năng gan và virus",
-            indication_date: "2024-12-06T08:30:00",
-            total_fee: 350000,
-            serviceItems: [
-                {
-                    id: "si-001",
-                    medical_service: {
-                        name: "Xét nghiệm HBsAg",
-                        description: "Xét nghiệm kháng nguyên bề mặt viêm gan B",
-                    },
-                    quantity: 1,
-                },
-                {
-                    id: "si-002",
-                    medical_service: {
-                        name: "Xét nghiệm chức năng gan (AST, ALT)",
-                        description: "Đánh giá tình trạng chức năng gan",
-                    },
-                    quantity: 1,
-                },
-            ],
-        },
-        {
-            id: "ind-002",
-            barcode: "IND001234568",
-            patient: {
-                id: "p-002",
-                patient_full_name: "Lê Thị Cẩm",
-                patient_dob: "1992-07-20",
-                patient_phone: "0912345678",
-                patient_address: "456 Nguyễn Huệ, Q1, TP.HCM",
-                patient_gender: "Nữ",
-            },
-            doctor: {
-                id: "d-002",
-                user: {
-                    full_name: "BS. Phạm Minh Đức",
-                },
-            },
-            diagnosis: "Khó thở, ho ra máu, cần xét nghiệm vi khuẩn lao",
-            indication_date: "2024-12-06T09:00:00",
-            total_fee: 450000,
-            serviceItems: [
-                {
-                    id: "si-003",
-                    medical_service: {
-                        name: "Xét nghiệm AFB đờm",
-                        description: "Tìm vi khuẩn kháng acid trong đờm (soi trực tiếp)",
-                    },
-                    quantity: 1,
-                },
-                {
-                    id: "si-004",
-                    medical_service: {
-                        name: "Nuôi cпосев vi khuẩn lao",
-                        description: "Cấy vi khuẩn lao từ mẫu đờm",
-                    },
-                    quantity: 1,
-                },
-            ],
-        },
-        {
-            id: "ind-003",
-            barcode: "IND001234569",
-            patient: {
-                id: "p-003",
-                patient_full_name: "Trần Văn Đông",
-                patient_dob: "1978-11-05",
-                patient_phone: "0923456789",
-                patient_address: "789 Lý Tự Trọng, Q1, TP.HCM",
-                patient_gender: "Nam",
-            },
-            doctor: {
-                id: "d-001",
-                user: {
-                    full_name: "BS. Trần Thị Bình",
-                },
-            },
-            diagnosis: "Hen phế quản, đánh giá mức độ viêm đường hô hấp",
-            indication_date: "2024-12-06T10:15:00",
-            total_fee: 280000,
-            serviceItems: [
-                {
-                    id: "si-005",
-                    medical_service: {
-                        name: "Xét nghiệm khí máu động mạch",
-                        description: "Đánh giá oxy hóa máu và cân bằng acid-base",
-                    },
-                    quantity: 1,
-                },
-                {
-                    id: "si-006",
-                    medical_service: {
-                        name: "Xét nghiệm IgE toàn phần",
-                        description: "Đánh giá mức độ dị ứng",
-                    },
-                    quantity: 1,
-                },
-            ],
-        },
-    ]);
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const fetchIndications = async () => {
+        try {
+            setLoading(true);
+            const data = await getTodayLabIndications();
+            setIndications(data);
+        } catch (error) {
+            console.error("Lỗi khi tải danh sách phiếu chỉ định:", error);
+            showToast("Không thể tải danh sách phiếu chỉ định", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchIndications();
+    }, []);
 
     const handleViewDetail = (indication) => {
         navigate(`/lab/indication/${indication.id}/result`, {
@@ -154,10 +56,11 @@ const LabIndicationListPage = () => {
                                 Danh sách bệnh nhân chỉ định xét nghiệm
                             </h1>
                             <button
-                                onClick={() => window.location.reload()}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                onClick={fetchIndications}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                                disabled={loading}
                             >
-                                Làm mới
+                                {loading ? "Đang tải..." : "Làm mới"}
                             </button>
                         </div>
 
@@ -167,7 +70,7 @@ const LabIndicationListPage = () => {
                             </div>
                         ) : indications.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                                Chưa có bệnh nhân nào được chỉ định xét nghiệm
+                                Chưa có bệnh nhân nào được chỉ định xét nghiệm hôm nay
                             </div>
                         ) : (
                             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -204,12 +107,12 @@ const LabIndicationListPage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                                                     {indication.barcode || indication.id.slice(0, 8)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        {indication.patient?.patient_full_name}
+                                                        {indication.patient?.patient_full_name || "N/A"}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {indication.patient?.patient_phone}
+                                                        {indication.patient?.patient_phone || "--"}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -261,4 +164,3 @@ const LabIndicationListPage = () => {
 };
 
 export default LabIndicationListPage;
-

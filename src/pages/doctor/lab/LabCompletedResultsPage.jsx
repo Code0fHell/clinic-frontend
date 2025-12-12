@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
@@ -6,10 +6,12 @@ import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
 import LabResultPrintModal from "./LabResultPrintModal";
 import { formatUTCDate } from "../../../utils/dateUtils";
+import { getTodayCompletedResults } from "../../../api/lab-test-result.api";
 
 const LabCompletedResultsPage = () => {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [completedResults, setCompletedResults] = useState([]);
     const [selectedResult, setSelectedResult] = useState(null);
     const [showPrintModal, setShowPrintModal] = useState(false);
     const [toast, setToast] = useState({
@@ -18,89 +20,26 @@ const LabCompletedResultsPage = () => {
         type: "success",
     });
 
-    // Dữ liệu mẫu - danh sách kết quả đã xử lý
-    const [completedResults] = useState([
-        {
-            id: "result-001",
-            barcode: "LAB001234567",
-            indication: {
-                id: "ind-001",
-                barcode: "IND001234567",
-                diagnosis: "Nghi ngờ viêm gan B, cần xét nghiệm HBsAg",
-                indication_date: "2024-12-06T08:30:00",
-            },
-            patient: {
-                id: "p-001",
-                patient_full_name: "Nguyễn Văn An",
-                patient_dob: "1985-03-15",
-                patient_phone: "0901234567",
-                patient_address: "123 Lê Lợi, Q1, TP.HCM",
-                patient_gender: "Nam",
-            },
-            doctor: {
-                id: "d-001",
-                user: {
-                    full_name: "BS. Trần Thị Bình",
-                },
-            },
-            testResults: [
-                {
-                    serviceName: "Xét nghiệm HBsAg",
-                    result: "Âm tính",
-                    unit: "",
-                    normalRange: "Âm tính",
-                },
-                {
-                    serviceName: "Xét nghiệm chức năng gan (AST, ALT)",
-                    result: "AST: 28 U/L, ALT: 32 U/L",
-                    unit: "U/L",
-                    normalRange: "AST: <40 U/L, ALT: <40 U/L",
-                },
-            ],
-            conclusion: "Kết quả xét nghiệm HBsAg âm tính, không phát hiện dấu hiệu viêm gan B. Chức năng gan trong giới hạn bình thường. Khuyến nghị theo dõi định kỳ.",
-            created_at: "2024-12-06T14:30:00",
-        },
-        {
-            id: "result-002",
-            barcode: "LAB001234568",
-            indication: {
-                id: "ind-002",
-                barcode: "IND001234568",
-                diagnosis: "Khó thở, ho ra máu, cần xét nghiệm vi khuẩn lao",
-                indication_date: "2024-12-06T09:00:00",
-            },
-            patient: {
-                id: "p-002",
-                patient_full_name: "Lê Thị Cẩm",
-                patient_dob: "1992-07-20",
-                patient_phone: "0912345678",
-                patient_address: "456 Nguyễn Huệ, Q1, TP.HCM",
-                patient_gender: "Nữ",
-            },
-            doctor: {
-                id: "d-002",
-                user: {
-                    full_name: "BS. Phạm Minh Đức",
-                },
-            },
-            testResults: [
-                {
-                    serviceName: "Xét nghiệm AFB đờm",
-                    result: "Dương tính 3+",
-                    unit: "",
-                    normalRange: "Âm tính",
-                },
-                {
-                    serviceName: "Nuôi cấy vi khuẩn lao",
-                    result: "Phát hiện Mycobacterium tuberculosis",
-                    unit: "",
-                    normalRange: "Âm tính",
-                },
-            ],
-            conclusion: "Xét nghiệm AFB đờm dương tính 3+, nuôi cấy phát hiện vi khuẩn lao. Chẩn đoán: Lao phổi hoạt động. Khuyến nghị: Điều trị lao theo phác đồ 6 tháng (2RHZE/4RH), cách ly, xét nghiệm đờm kiểm tra sau 2 tháng điều trị.",
-            created_at: "2024-12-06T15:00:00",
-        },
-    ]);
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const fetchCompletedResults = async () => {
+        try {
+            setLoading(true);
+            const data = await getTodayCompletedResults();
+            setCompletedResults(data);
+        } catch (error) {
+            console.error("Lỗi khi tải danh sách kết quả:", error);
+            showToast("Không thể tải danh sách kết quả xét nghiệm", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCompletedResults();
+    }, []);
 
     const handlePrint = (result) => {
         setSelectedResult(result);
@@ -121,7 +60,7 @@ const LabCompletedResultsPage = () => {
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-2xl font-bold text-gray-800">
-                                Danh sách kết quả đã xử lý
+                                Danh sách kết quả đã xử lý hôm nay
                             </h1>
                             <div className="flex gap-2">
                                 <button
@@ -131,10 +70,11 @@ const LabCompletedResultsPage = () => {
                                     Danh sách chỉ định
                                 </button>
                                 <button
-                                    onClick={() => window.location.reload()}
+                                    onClick={fetchCompletedResults}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    disabled={loading}
                                 >
-                                    Làm mới
+                                    {loading ? "Đang tải..." : "Làm mới"}
                                 </button>
                             </div>
                         </div>
@@ -145,7 +85,7 @@ const LabCompletedResultsPage = () => {
                             </div>
                         ) : completedResults.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                                Chưa có kết quả xét nghiệm nào
+                                Chưa có kết quả xét nghiệm nào được hoàn thành hôm nay
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -160,7 +100,7 @@ const LabCompletedResultsPage = () => {
                                                     <h3 className="text-lg font-semibold text-gray-800">
                                                         {result.patient?.patient_full_name}
                                                     </h3>
-                                                    <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
+                                                    <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium">
                                                         {result.barcode || result.id}
                                                     </span>
                                                 </div>
@@ -207,7 +147,7 @@ const LabCompletedResultsPage = () => {
                                             <div className="mb-3">
                                                 <span className="font-medium text-gray-700">Chẩn đoán:</span>
                                                 <p className="text-gray-600 mt-1">
-                                                    {result.indication?.diagnosis}
+                                                    {result.indication?.diagnosis || "--"}
                                                 </p>
                                             </div>
 
@@ -219,19 +159,40 @@ const LabCompletedResultsPage = () => {
                                                             key={idx}
                                                             className="bg-gray-50 p-3 rounded border border-gray-200"
                                                         >
-                                                            <div className="font-medium text-gray-800 mb-1">
-                                                                {test.serviceName}
-                                                            </div>
-                                                            <div className="text-sm text-gray-600">
-                                                                <span className="font-medium">Kết quả:</span> {test.result}
-                                                                {test.unit && ` (${test.unit})`}
-                                                            </div>
-                                                            {test.normalRange && (
-                                                                <div className="text-sm text-gray-500">
-                                                                    <span className="font-medium">Giá trị tham chiếu:</span>{" "}
-                                                                    {test.normalRange}
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="flex-1">
+                                                                    <div className="font-medium text-gray-800 mb-1">
+                                                                        {idx + 1}. {test.serviceName}
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600">
+                                                                        <span className="font-medium">Kết quả đo:</span>{" "}
+                                                                        <span className="text-blue-600 font-semibold">{test.result}</span>
+                                                                    </div>
+                                                                    {test.referenceValue && (
+                                                                        <div className="text-sm text-gray-500 mt-1">
+                                                                            <span className="font-medium">Giá trị tham chiếu:</span>{" "}
+                                                                            {test.referenceValue}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            )}
+                                                                {test.referenceValue && test.result && (
+                                                                    <div className="ml-4">
+                                                                        {parseFloat(test.result) > test.referenceValue ? (
+                                                                            <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">
+                                                                                ⬆ Cao
+                                                                            </span>
+                                                                        ) : parseFloat(test.result) < test.referenceValue ? (
+                                                                            <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                                                                                ⬇ Thấp
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                                                                                ✓ Bình thường
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -275,4 +236,3 @@ const LabCompletedResultsPage = () => {
 };
 
 export default LabCompletedResultsPage;
-
