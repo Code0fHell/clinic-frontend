@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
@@ -6,10 +6,12 @@ import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
 import DiagnosticResultPrintModal from "./DiagnosticResultPrintModal";
 import { formatUTCDate } from "../../../utils/dateUtils";
+import { getCompletedDiagnosticResults } from "../../../api/imaging.api";
 
 const DiagnosticCompletedResultsPage = () => {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [completedResults, setCompletedResults] = useState([]);
     const [selectedResult, setSelectedResult] = useState(null);
     const [showPrintModal, setShowPrintModal] = useState(false);
     const [toast, setToast] = useState({
@@ -18,73 +20,51 @@ const DiagnosticCompletedResultsPage = () => {
         type: "success",
     });
 
-    // Dữ liệu mẫu - danh sách kết quả đã xử lý với ảnh giả lập
-    const [completedResults] = useState([
-        {
-            id: "result-diag-001",
-            barcode: "DIAGRES001234567",
-            indication: {
-                id: "ind-diag-001",
-                barcode: "DIAG001234567",
-                diagnosis: "Ho kéo dài 3 tuần, đau ngực, nghi ngờ viêm phổi",
-                indication_date: "2024-12-07T08:00:00",
-            },
-            patient: {
-                id: "p-001",
-                patient_full_name: "Trần Văn Bình",
-                patient_dob: "1980-05-20",
-                patient_phone: "0905123456",
-                patient_address: "234 Võ Văn Tần, Q3, TP.HCM",
-                patient_gender: "Nam",
-            },
-            doctor: {
-                id: "d-001",
-                user: {
-                    full_name: "BS. Nguyễn Hữu Thọ",
-                },
-            },
-            serviceNames: ["X-quang phổi trước sau", "X-quang phổi nghiêng"],
-            images: [
-                "https://images.unsplash.com/photo-1631651363531-fd29aec4cb5c?q=80&w=776&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                "https://images.unsplash.com/photo-1631651363531-fd29aec4cb5c?q=80&w=776&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-            ],
-            description: "Hình ảnh X-quang cho thấy đám mờ dạng thâm nhiễm khu trú ở thùy dưới phổi phải, ranh giới không rõ. Góc sườn hoành phải nhẹ độ tù. Không thấy hình ảnh tràn khí màng phổi. Tim to ranh giới bình thường. Xương sườn, xương đốt sống không có tổn thương.",
-            conclusion: "Viêm phổi thùy dưới phổi phải. Khuyến nghị: Điều trị kháng sinh theo phác đồ, tái khám sau 1 tuần để đánh giá đáp ứng điều trị.",
-            created_at: "2024-12-07T14:30:00",
-        },
-        {
-            id: "result-diag-002",
-            barcode: "DIAGRES001234568",
-            indication: {
-                id: "ind-diag-002",
-                barcode: "DIAG001234568",
-                diagnosis: "Khó thở, ho ra máu, nghi ngờ lao phổi",
-                indication_date: "2024-12-07T09:30:00",
-            },
-            patient: {
-                id: "p-002",
-                patient_full_name: "Nguyễn Thị Mai",
-                patient_dob: "1995-08-15",
-                patient_phone: "0916234567",
-                patient_address: "567 Lý Thường Kiệt, Q10, TP.HCM",
-                patient_gender: "Nữ",
-            },
-            doctor: {
-                id: "d-002",
-                user: {
-                    full_name: "BS. Lê Văn Hùng",
-                },
-            },
-            serviceNames: ["X-quang phổi 2 tư thế", "Chụp CT ngực"],
-            images: [
-                "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?q=80&w=800&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop",
-            ],
-            description: "X-quang phổi: Hình ảnh đám mờ dạng đốm vón cục khu trú ở thùy trên phổi phải, ranh giới không đều. CT ngực: Tổn thương dạng hang ở đỉnh phổi phải, có hình ảnh dày thành. Hạch trung thất không to. Không có tràn dịch màng phổi.",
-            conclusion: "Lao phổi thùy trên phổi phải có hang. Khuyến nghị: Điều trị lao theo phác đồ 6 tháng, cách ly, tái khám định kỳ hàng tháng. Xét nghiệm đờm để xác định vi khuẩn lao.",
-            created_at: "2024-12-07T15:00:00",
-        },
-    ]);
+    // Fetch completed results from API
+    useEffect(() => {
+        const fetchResults = async () => {
+            try {
+                setLoading(true);
+                const data = await getCompletedDiagnosticResults();
+                setCompletedResults(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Lỗi khi tải kết quả đã xử lý:", error);
+                setToast({
+                    show: true,
+                    message:
+                        error?.message ||
+                        "Không thể tải danh sách kết quả đã xử lý",
+                    type: "error",
+                });
+                setCompletedResults([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchResults();
+    }, []);
+
+    const handleRefresh = async () => {
+        try {
+            setLoading(true);
+            const data = await getCompletedDiagnosticResults();
+            setCompletedResults(Array.isArray(data) ? data : []);
+            setToast({
+                show: true,
+                message: "Đã làm mới danh sách",
+                type: "success",
+            });
+        } catch (error) {
+            console.error("Lỗi khi làm mới danh sách:", error);
+            setToast({
+                show: true,
+                message: error?.message || "Không thể làm mới danh sách",
+                type: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handlePrint = (result) => {
         setSelectedResult(result);
@@ -109,16 +89,19 @@ const DiagnosticCompletedResultsPage = () => {
                             </h1>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => navigate("/diagnostic/indications")}
+                                    onClick={() =>
+                                        navigate("/diagnostic/indications")
+                                    }
                                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                                 >
                                     Danh sách chỉ định
                                 </button>
                                 <button
-                                    onClick={() => window.location.reload()}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    onClick={handleRefresh}
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Làm mới
+                                    {loading ? "Đang tải..." : "Làm mới"}
                                 </button>
                             </div>
                         </div>
@@ -142,33 +125,60 @@ const DiagnosticCompletedResultsPage = () => {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-4 mb-2">
                                                     <h3 className="text-lg font-semibold text-gray-800">
-                                                        {result.patient?.patient_full_name}
+                                                        {
+                                                            result.patient
+                                                                ?.patient_full_name
+                                                        }
                                                     </h3>
                                                     <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
-                                                        {result.barcode || result.id}
+                                                        {result.barcode ||
+                                                            result.id}
                                                     </span>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                                                     <div>
-                                                        <span className="font-medium">Ngày sinh:</span>{" "}
-                                                        {formatUTCDate(result.patient?.patient_dob, "DD/MM/YYYY")}
+                                                        <span className="font-medium">
+                                                            Ngày sinh:
+                                                        </span>{" "}
+                                                        {formatUTCDate(
+                                                            result.patient
+                                                                ?.patient_dob,
+                                                            "DD/MM/YYYY"
+                                                        )}
                                                     </div>
                                                     <div>
-                                                        <span className="font-medium">Giới tính:</span>{" "}
-                                                        {result.patient?.patient_gender}
+                                                        <span className="font-medium">
+                                                            Giới tính:
+                                                        </span>{" "}
+                                                        {
+                                                            result.patient
+                                                                ?.patient_gender
+                                                        }
                                                     </div>
                                                     <div>
-                                                        <span className="font-medium">Số điện thoại:</span>{" "}
-                                                        {result.patient?.patient_phone}
+                                                        <span className="font-medium">
+                                                            Số điện thoại:
+                                                        </span>{" "}
+                                                        {
+                                                            result.patient
+                                                                ?.patient_phone
+                                                        }
                                                     </div>
                                                     <div>
-                                                        <span className="font-medium">BS chỉ định:</span>{" "}
-                                                        {result.doctor?.user?.full_name}
+                                                        <span className="font-medium">
+                                                            BS chỉ định:
+                                                        </span>{" "}
+                                                        {
+                                                            result.doctor?.user
+                                                                ?.full_name
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={() => handlePrint(result)}
+                                                onClick={() =>
+                                                    handlePrint(result)
+                                                }
                                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                                             >
                                                 <svg
@@ -189,47 +199,96 @@ const DiagnosticCompletedResultsPage = () => {
 
                                         <div className="border-t border-gray-200 pt-4">
                                             <div className="mb-3">
-                                                <span className="font-medium text-gray-700">Chẩn đoán:</span>
+                                                <span className="font-medium text-gray-700">
+                                                    Chẩn đoán:
+                                                </span>
                                                 <p className="text-gray-600 mt-1">
-                                                    {result.indication?.diagnosis}
+                                                    {
+                                                        result.indication
+                                                            ?.diagnosis
+                                                    }
                                                 </p>
                                             </div>
 
                                             <div className="mb-3">
-                                                <span className="font-medium text-gray-700">Dịch vụ thực hiện:</span>
+                                                <span className="font-medium text-gray-700">
+                                                    Dịch vụ thực hiện:
+                                                </span>
                                                 <div className="mt-2 flex flex-wrap gap-2">
-                                                    {result.serviceNames?.map((name, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                                                        >
-                                                            {name}
-                                                        </span>
-                                                    ))}
+                                                    {result.serviceNames?.map(
+                                                        (name, idx) => (
+                                                            <span
+                                                                key={idx}
+                                                                className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
+                                                            >
+                                                                {name}
+                                                            </span>
+                                                        )
+                                                    )}
                                                 </div>
                                             </div>
 
                                             {/* Hiển thị ảnh thumbnail */}
-                                            {result.images && result.images.length > 0 && (
-                                                <div className="mb-3">
-                                                    <span className="font-medium text-gray-700">Hình ảnh chẩn đoán:</span>
-                                                    <div className="mt-2 grid grid-cols-4 gap-2">
-                                                        {result.images.map((image, idx) => (
-                                                            <img
-                                                                key={idx}
-                                                                src={image}
-                                                                alt={`Ảnh ${idx + 1}`}
-                                                                className="w-full h-24 object-cover rounded border border-gray-300 cursor-pointer hover:opacity-80 transition"
-                                                                onClick={() => window.open(image, '_blank')}
-                                                            />
-                                                        ))}
+                                            {result.images &&
+                                                result.images.length > 0 && (
+                                                    <div className="mb-3">
+                                                        <span className="font-medium text-gray-700">
+                                                            Hình ảnh chẩn đoán:
+                                                        </span>
+                                                        <div className="mt-2 grid grid-cols-4 gap-2">
+                                                            {result.images.map(
+                                                                (
+                                                                    image,
+                                                                    idx
+                                                                ) => {
+                                                                    const imageUrl =
+                                                                        image.startsWith(
+                                                                            "http"
+                                                                        )
+                                                                            ? image
+                                                                            : `${
+                                                                                  import.meta
+                                                                                      .env
+                                                                                      .VITE_API_URL
+                                                                              }${image}`;
+                                                                    return (
+                                                                        <img
+                                                                            key={
+                                                                                idx
+                                                                            }
+                                                                            src={
+                                                                                imageUrl
+                                                                            }
+                                                                            alt={`Ảnh ${
+                                                                                idx +
+                                                                                1
+                                                                            }`}
+                                                                            className="w-full h-24 object-cover rounded border border-gray-300 cursor-pointer hover:opacity-80 transition"
+                                                                            onClick={() =>
+                                                                                window.open(
+                                                                                    imageUrl,
+                                                                                    "_blank"
+                                                                                )
+                                                                            }
+                                                                            onError={(
+                                                                                e
+                                                                            ) => {
+                                                                                e.target.style.display =
+                                                                                    "none";
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                }
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
 
                                             {result.description && (
                                                 <div className="mb-3">
-                                                    <span className="font-medium text-gray-700">Mô tả:</span>
+                                                    <span className="font-medium text-gray-700">
+                                                        Mô tả:
+                                                    </span>
                                                     <p className="text-gray-600 mt-1 bg-gray-50 p-3 rounded">
                                                         {result.description}
                                                     </p>
@@ -237,14 +296,20 @@ const DiagnosticCompletedResultsPage = () => {
                                             )}
 
                                             <div>
-                                                <span className="font-medium text-gray-700">Kết luận:</span>
+                                                <span className="font-medium text-gray-700">
+                                                    Kết luận:
+                                                </span>
                                                 <p className="text-gray-800 bg-blue-50 p-3 rounded mt-1">
                                                     {result.conclusion}
                                                 </p>
                                             </div>
 
                                             <div className="mt-3 text-sm text-gray-500">
-                                                Ngày thực hiện: {formatUTCDate(result.created_at, "DD/MM/YYYY HH:mm")}
+                                                Ngày thực hiện:{" "}
+                                                {formatUTCDate(
+                                                    result.created_at,
+                                                    "DD/MM/YYYY HH:mm"
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -274,5 +339,3 @@ const DiagnosticCompletedResultsPage = () => {
 };
 
 export default DiagnosticCompletedResultsPage;
-
-

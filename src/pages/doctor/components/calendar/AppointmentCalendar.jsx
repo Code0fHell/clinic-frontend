@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { getAllAppointments } from "../../../../api/appointment.api";
@@ -15,32 +15,48 @@ const AppointmentCalendar = () => {
   const [current, setCurrent] = useState(dayjs());
   const [upcoming, setUpcoming] = useState([]);
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const data = await getAllAppointments();
-        setAppointments(data);
+  const fetchAppointments = useCallback(async () => {
+    try {
+      const data = await getAllAppointments();
+      setAppointments(data);
 
-        const now = getCurrentUTC();
-        const upcomingList = data
-          .filter((a) => {
-            if (!a.scheduled_date) return false;
-            const apptUTC = parseUTCDate(a.scheduled_date);
-            return apptUTC && apptUTC.isAfter(now);
-          })
-          .sort((a, b) => {
-            const dateA = parseUTCDate(a.scheduled_date);
-            const dateB = parseUTCDate(b.scheduled_date);
-            return dateA.valueOf() - dateB.valueOf();
-          })
-          .slice(0, 5);
-        setUpcoming(upcomingList);
-      } catch (err) {
-        console.error("Lỗi khi tải lịch hẹn:", err);
-      }
-    };
-    fetchAppointments();
+      const now = getCurrentUTC();
+      const upcomingList = data
+        .filter((a) => {
+          if (!a.scheduled_date) return false;
+          const apptUTC = parseUTCDate(a.scheduled_date);
+          return apptUTC && apptUTC.isAfter(now);
+        })
+        .sort((a, b) => {
+          const dateA = parseUTCDate(a.scheduled_date);
+          const dateB = parseUTCDate(b.scheduled_date);
+          return dateA.valueOf() - dateB.valueOf();
+        })
+        .slice(0, 5);
+      setUpcoming(upcomingList);
+    } catch (err) {
+      console.error("Lỗi khi tải lịch hẹn:", err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAppointments();
+
+    const onFocus = () => fetchAppointments();
+    const onVisibility = () => {
+      if (!document.hidden) fetchAppointments();
+    };
+    const intervalId = setInterval(fetchAppointments, 20000);
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [fetchAppointments]);
 
   return (
     <div className="flex gap-6 px-6 pt-[20px] bg-gray-50 min-h-screen ml-[50px]">
