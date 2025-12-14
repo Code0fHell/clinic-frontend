@@ -151,65 +151,88 @@ export default function Visit() {
             if (!printWindow) return;
 
             printWindow.document.write(`
+                <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta charset="UTF-8">
                     <title>Phiếu khám lâm sàng</title>
                     <style>
-                        @page { size: A4; margin: 20mm; }
+                        @page { 
+                            size: A4; 
+                            margin: 15mm 20mm; 
+                        }
+
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
 
                         body {
                             font-family: "Times New Roman", serif;
-                            font-size: 25px;
-                            color: #000;
-                            width: 210mm;
-                            height: 297mm;
-                            margin: 0;
-                            padding: 0;
+                            font-size: 14px;
+                            color: #1f2937;
+                            line-height: 1.6;
+                            background: #fff;
                         }
 
                         .ticket {
                             width: 100%;
-                            padding: 25mm;
-                            box-sizing: border-box;
+                            padding: 20mm;
+                            max-width: 100%;
                         }
 
                         .header {
                             text-align: center;
-                            margin-bottom: 15px;
+                            margin-bottom: 20px;
+                            padding-bottom: 15px;
+                            border-bottom: 2px solid #1f2937;
                         }
 
                         .header h2 {
-                            margin: 0;
-                            font-size: 16px;
+                            margin: 0 0 8px 0;
+                            font-size: 18px;
                             font-weight: bold;
+                            letter-spacing: 1px;
+                            color: #1f2937;
                         }
 
                         .header h3 {
-                            margin: 5px 0;
-                            font-size: 20px;
+                            margin: 0;
+                            font-size: 16px;
                             font-weight: bold;
+                            color: #374151;
+                        }
+
+                        .barcode-container {
+                            text-align: center;
+                            margin: 20px 0;
+                            padding: 15px 0;
                         }
 
                         .barcode {
                             display: block;
-                            margin: 5px auto;
+                            margin: 0 auto 8px auto;
                         }
 
                         .barcode-text {
                             text-align: center;
-                            font-size: 13px;
-                            margin-bottom: 15px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            color:rgb(43, 52, 66);
+                            letter-spacing: 1px;
                         }
 
-                        /* Bảng chính */
+                        /* Bảng chính - Style đẹp hơn */
                         table {
                             width: 100%;
-                            border: 1px solid #221f1fff; /* chỉ viền ngoài */
                             border-collapse: collapse;
+                            margin-top: 10px;
+                            border: 0.5px solid rgb(54, 70, 93);
                         }
 
                         tr {
-                            border-bottom: 1px solid #000;
+                            border-bottom: 1px solid #1f2937;
                         }
 
                         tr:last-child {
@@ -217,33 +240,53 @@ export default function Visit() {
                         }
 
                         td {
-                            padding: 6px 12px;
-                            border: none; /* bỏ viền giữa */
+                            padding: 10px 14px;
                             vertical-align: top;
+                            border-right: 1px solid #1f2937;
+                        }
+
+                        td:last-child {
+                            border-right: none;
                         }
 
                         td:first-child {
-                            width: 30%;
-                            font-weight: bold;
+                            width: 35%;
+                            font-weight: 600;
+                            color: #1f2937;
+                        }
+
+                        td:last-child {
+                            color: #1f2937;
+                            font-weight: 400;
                         }
 
                         @media print {
                             .ticket {
-                                padding: 20mm;
+                                padding: 15mm 20mm;
+                            }
+
+                            table {
+                                page-break-inside: avoid;
+                            }
+
+                            tr {
+                                page-break-inside: avoid;
+                                page-break-after: auto;
                             }
                         }
                     </style>
-                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
                 </head>
                 <body>
                     <div class="ticket">
                         <div class="header">
-                            <h5>PHIẾU KHÁM LÂM SÀNG</h2>
+                            <h2>PHIẾU KHÁM LÂM SÀNG</h2>
                             <h3>STT: ${ticket.queue_number}</h3>
                         </div>
 
-                        <svg class="barcode"></svg>
-                        <div class="barcode-text">${ticket.barcode}</div>
+                        <div class="barcode-container">
+                            <svg class="barcode"></svg>
+                            <div class="barcode-text">${ticket.barcode}</div>
+                        </div>
 
                         <table>
                             <tr>
@@ -275,38 +318,67 @@ export default function Visit() {
                                 <td>${ticket.issued_at ? ticket.issued_at.slice(0, 10).split('-').reverse().join('-') : ""}</td>
                             </tr>
                         </table>
+                    </div>
 
-
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
                     <script>
-                        // Tạo barcode
-                        JsBarcode(".barcode","${ticket.barcode}", {
-                            format: "CODE128",
-                            displayValue: false,
-                            fontSize: 13,
-                            width: 1,
-                            height: 20,
-                            textMargin: 2
-                        });
+                        // Đợi script load xong và window ready
+                        function initPrint() {
+                            try {
+                                // Tạo barcode
+                                if (typeof JsBarcode !== 'undefined') {
+                                    JsBarcode(".barcode", "${ticket.barcode}", {
+                                        format: "CODE128",
+                                        displayValue: false,
+                                        fontSize: 13,
+                                        width: 1.5,
+                                        height: 30,
+                                        textMargin: 2
+                                    });
+                                    
+                                    // Đợi một chút để đảm bảo barcode đã render
+                                    setTimeout(() => {
+                                        window.focus();
+                                        window.print();
+                                    }, 300);
+                                } else {
+                                    // Nếu script chưa load, thử lại sau 100ms
+                                    setTimeout(initPrint, 100);
+                                }
+                            } catch (error) {
+                                console.error('Lỗi tạo barcode:', error);
+                                // Vẫn in dù không có barcode
+                                setTimeout(() => {
+                                    window.focus();
+                                    window.print();
+                                }, 300);
+                            }
+                        }
 
-                        // Đóng cửa sổ sau in hoặc cancel
+                        // Đóng cửa sổ sau in
                         window.onafterprint = () => {
                             window.close();
                         };
 
-                        // fallback: đóng khi người dùng bấm Cancel
-                        setTimeout(() => {
+                        // Fallback: đóng khi người dùng bấm Cancel hoặc đóng cửa sổ
+                        let closeTimeout = setTimeout(() => {
                             window.addEventListener('focus', () => {
-                                window.close();
-                            });
-                        }, 500);
+                                setTimeout(() => window.close(), 100);
+                            }, { once: true });
+                        }, 1000);
+
+                        // Khởi tạo khi DOM ready
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initPrint);
+                        } else {
+                            initPrint();
+                        }
                     </script>
                 </body>
                 </html>
-        `);
+            `);
 
             printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
 
         } catch (error) {
             alert('Không thể tạo hoặc lấy Medical Ticket: ' + (error.response?.data?.message || error.message));
@@ -526,7 +598,7 @@ export default function Visit() {
                                     type="text"
                                     placeholder="Tìm kiếm theo tên hoặc số điện thoại"
                                     value={searchVisit}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) => setSearchVisit(e.target.value)}
                                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-base
                                                focus:outline-none focus:ring-2 focus:ring-[#008080] transition
                                                placeholder:text-gray-400"
