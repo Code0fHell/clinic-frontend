@@ -1,23 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
 import DoctorSidebar from "../components/layout/DoctorSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
+import {
+    getDiagnosticIndicationDetail,
+    createImageResult,
+} from "../../../api/imaging.api";
 
 const DiagnosticImageResultPage = () => {
     const { id } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    const indication = location.state?.indication;
+    const indicationFromState = location.state?.indication;
 
-    const [loading, setLoading] = useState(false);
+    const [indication, setIndication] = useState(indicationFromState);
+    const [loading, setLoading] = useState(!indicationFromState);
     const [toast, setToast] = useState({
         show: false,
         message: "",
         type: "success",
     });
+
+    // Fetch indication detail if not in state
+    useEffect(() => {
+        if (!indicationFromState && id) {
+            const fetchIndication = async () => {
+                try {
+                    setLoading(true);
+                    const data = await getDiagnosticIndicationDetail(id);
+                    setIndication(data);
+                } catch (error) {
+                    console.error("Lỗi khi tải chi tiết chỉ định:", error);
+                    setToast({
+                        show: true,
+                        message:
+                            error?.message ||
+                            "Không thể tải thông tin chỉ định",
+                        type: "error",
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchIndication();
+        }
+    }, [id, indicationFromState]);
 
     // State cho form và ảnh
     const [formData, setFormData] = useState({
@@ -30,13 +60,20 @@ const DiagnosticImageResultPage = () => {
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
-        
+
         if (files.length === 0) return;
 
         // Validate file types
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        const invalidFiles = files.filter(file => !validTypes.includes(file.type));
-        
+        const validTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/gif",
+        ];
+        const invalidFiles = files.filter(
+            (file) => !validTypes.includes(file.type)
+        );
+
         if (invalidFiles.length > 0) {
             setToast({
                 show: true,
@@ -48,8 +85,8 @@ const DiagnosticImageResultPage = () => {
 
         // Validate file size (max 5MB per file)
         const maxSize = 5 * 1024 * 1024;
-        const oversizedFiles = files.filter(file => file.size > maxSize);
-        
+        const oversizedFiles = files.filter((file) => file.size > maxSize);
+
         if (oversizedFiles.length > 0) {
             setToast({
                 show: true,
@@ -60,35 +97,38 @@ const DiagnosticImageResultPage = () => {
         }
 
         // Add new images
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            images: [...prev.images, ...files]
+            images: [...prev.images, ...files],
         }));
 
         // Create previews
-        files.forEach(file => {
+        files.forEach((file) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreviews(prev => [...prev, {
-                    file: file,
-                    preview: reader.result
-                }]);
+                setImagePreviews((prev) => [
+                    ...prev,
+                    {
+                        file: file,
+                        preview: reader.result,
+                    },
+                ]);
             };
             reader.readAsDataURL(file);
         });
     };
 
     const handleRemoveImage = (index) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            images: prev.images.filter((_, i) => i !== index)
+            images: prev.images.filter((_, i) => i !== index),
         }));
-        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Validation
         if (formData.images.length === 0) {
             setToast({
@@ -108,20 +148,32 @@ const DiagnosticImageResultPage = () => {
             return;
         }
 
+        if (!id && !indication?.id) {
+            setToast({
+                show: true,
+                message: "Không tìm thấy ID chỉ định",
+                type: "error",
+            });
+            return;
+        }
+
         setLoading(true);
         try {
-            // TODO: tạo api save diagnostic image result
-            // const formDataToSend = new FormData();
-            // formDataToSend.append('indicationId', id);
-            // formDataToSend.append('conclusion', formData.conclusion);
-            // formDataToSend.append('description', formData.description);
-            // formData.images.forEach(image => {
-            //     formDataToSend.append('images', image);
-            // });
-            // await saveDiagnosticImageResult(formDataToSend);
-            
-            // fake api call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const indicationId = id || indication.id;
+            const formDataToSend = new FormData();
+            formDataToSend.append("indication_id", indicationId);
+            formDataToSend.append("conclusion", formData.conclusion);
+            if (formData.description) {
+                formDataToSend.append("description", formData.description);
+                formDataToSend.append("result", formData.description);
+            }
+
+            // Append all image files
+            formData.images.forEach((image) => {
+                formDataToSend.append("image_files", image);
+            });
+
+            await createImageResult(formDataToSend);
 
             setToast({
                 show: true,
@@ -137,7 +189,8 @@ const DiagnosticImageResultPage = () => {
             console.error("Lỗi khi lưu kết quả chẩn đoán hình ảnh:", error);
             setToast({
                 show: true,
-                message: "Lỗi khi lưu kết quả chẩn đoán hình ảnh",
+                message:
+                    error?.message || "Lỗi khi lưu kết quả chẩn đoán hình ảnh",
                 type: "error",
             });
         } finally {
@@ -153,9 +206,13 @@ const DiagnosticImageResultPage = () => {
                     <DoctorSidebar />
                     <main className="flex-1 p-8 overflow-auto bg-gray-50 flex items-center justify-center">
                         <div className="text-center">
-                            <p className="text-gray-500 mb-4">Không tìm thấy thông tin phiếu chỉ định</p>
+                            <p className="text-gray-500 mb-4">
+                                Không tìm thấy thông tin phiếu chỉ định
+                            </p>
                             <button
-                                onClick={() => navigate("/diagnostic/indications")}
+                                onClick={() =>
+                                    navigate("/diagnostic/indications")
+                                }
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                             >
                                 Quay lại danh sách
@@ -179,7 +236,9 @@ const DiagnosticImageResultPage = () => {
                                 Nhập kết quả chẩn đoán hình ảnh
                             </h1>
                             <button
-                                onClick={() => navigate("/diagnostic/indications")}
+                                onClick={() =>
+                                    navigate("/diagnostic/indications")
+                                }
                                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                             >
                                 Quay lại
@@ -198,7 +257,8 @@ const DiagnosticImageResultPage = () => {
                                             Mã phiếu
                                         </label>
                                         <p className="text-gray-900 font-medium">
-                                            {indication.barcode || indication.id}
+                                            {indication.barcode ||
+                                                indication.id}
                                         </p>
                                     </div>
                                     <div>
@@ -206,7 +266,10 @@ const DiagnosticImageResultPage = () => {
                                             Ngày chỉ định
                                         </label>
                                         <p className="text-gray-900">
-                                            {formatUTCDate(indication.indication_date, "DD/MM/YYYY HH:mm")}
+                                            {formatUTCDate(
+                                                indication.indication_date,
+                                                "DD/MM/YYYY HH:mm"
+                                            )}
                                         </p>
                                     </div>
                                     <div>
@@ -214,7 +277,10 @@ const DiagnosticImageResultPage = () => {
                                             Họ và tên
                                         </label>
                                         <p className="text-gray-900 font-medium">
-                                            {indication.patient?.patient_full_name}
+                                            {
+                                                indication.patient
+                                                    ?.patient_full_name
+                                            }
                                         </p>
                                     </div>
                                     <div>
@@ -222,7 +288,10 @@ const DiagnosticImageResultPage = () => {
                                             Ngày sinh
                                         </label>
                                         <p className="text-gray-900">
-                                            {formatUTCDate(indication.patient?.patient_dob, "DD/MM/YYYY")}
+                                            {formatUTCDate(
+                                                indication.patient?.patient_dob,
+                                                "DD/MM/YYYY"
+                                            )}
                                         </p>
                                     </div>
                                     <div>
@@ -246,7 +315,10 @@ const DiagnosticImageResultPage = () => {
                                             Địa chỉ
                                         </label>
                                         <p className="text-gray-900">
-                                            {indication.patient?.patient_address}
+                                            {
+                                                indication.patient
+                                                    ?.patient_address
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -283,24 +355,42 @@ const DiagnosticImageResultPage = () => {
                                     Dịch vụ chẩn đoán
                                 </h2>
                                 <div className="space-y-2">
-                                    {indication.serviceItems?.map((item, index) => (
-                                        <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                            <span className="font-medium text-gray-700">{index + 1}.</span>
-                                            <div className="flex-1">
-                                                <p className="font-medium text-gray-800">{item.medical_service.name}</p>
-                                                <p className="text-sm text-gray-600">{item.medical_service.description}</p>
+                                    {indication.serviceItems?.map(
+                                        (item, index) => (
+                                            <div
+                                                key={item.id}
+                                                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                                            >
+                                                <span className="font-medium text-gray-700">
+                                                    {index + 1}.
+                                                </span>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-gray-800">
+                                                        {
+                                                            item.medical_service
+                                                                .name
+                                                        }
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {
+                                                            item.medical_service
+                                                                .description
+                                                        }
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    )}
                                 </div>
                             </div>
 
                             {/* Upload ảnh */}
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Tải lên hình ảnh chẩn đoán <span className="text-red-500">*</span>
+                                    Tải lên hình ảnh chẩn đoán{" "}
+                                    <span className="text-red-500">*</span>
                                 </h2>
-                                
+
                                 {/* Upload button */}
                                 <div className="mb-4">
                                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
@@ -319,9 +409,15 @@ const DiagnosticImageResultPage = () => {
                                                 />
                                             </svg>
                                             <p className="mb-2 text-sm text-gray-500">
-                                                <span className="font-semibold">Click để tải ảnh lên</span> hoặc kéo thả
+                                                <span className="font-semibold">
+                                                    Click để tải ảnh lên
+                                                </span>{" "}
+                                                hoặc kéo thả
                                             </p>
-                                            <p className="text-xs text-gray-500">PNG, JPG, GIF (tối đa 5MB mỗi ảnh)</p>
+                                            <p className="text-xs text-gray-500">
+                                                PNG, JPG, GIF (tối đa 5MB mỗi
+                                                ảnh)
+                                            </p>
                                         </div>
                                         <input
                                             type="file"
@@ -337,7 +433,10 @@ const DiagnosticImageResultPage = () => {
                                 {imagePreviews.length > 0 && (
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                         {imagePreviews.map((item, index) => (
-                                            <div key={index} className="relative group">
+                                            <div
+                                                key={index}
+                                                className="relative group"
+                                            >
                                                 <img
                                                     src={item.preview}
                                                     alt={`Preview ${index + 1}`}
@@ -345,7 +444,9 @@ const DiagnosticImageResultPage = () => {
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleRemoveImage(index)}
+                                                    onClick={() =>
+                                                        handleRemoveImage(index)
+                                                    }
                                                     className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"
                                                 >
                                                     <svg
@@ -378,7 +479,12 @@ const DiagnosticImageResultPage = () => {
                                 </h2>
                                 <textarea
                                     value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            description: e.target.value,
+                                        })
+                                    }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     rows="4"
                                     placeholder="Nhập mô tả chi tiết về hình ảnh chẩn đoán..."
@@ -388,11 +494,17 @@ const DiagnosticImageResultPage = () => {
                             {/* Kết luận */}
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Kết luận <span className="text-red-500">*</span>
+                                    Kết luận{" "}
+                                    <span className="text-red-500">*</span>
                                 </h2>
                                 <textarea
                                     value={formData.conclusion}
-                                    onChange={(e) => setFormData({ ...formData, conclusion: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            conclusion: e.target.value,
+                                        })
+                                    }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     rows="4"
                                     placeholder="Nhập kết luận về kết quả chẩn đoán hình ảnh..."
@@ -404,7 +516,9 @@ const DiagnosticImageResultPage = () => {
                             <div className="flex justify-end gap-4">
                                 <button
                                     type="button"
-                                    onClick={() => navigate("/diagnostic/indications")}
+                                    onClick={() =>
+                                        navigate("/diagnostic/indications")
+                                    }
                                     className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                                 >
                                     Hủy
@@ -438,5 +552,3 @@ const DiagnosticImageResultPage = () => {
 };
 
 export default DiagnosticImageResultPage;
-
-

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTodayAppointments } from "../../../../api/appointment.api";
 import { formatUTCDate } from "../../../../utils/dateUtils";
@@ -6,18 +6,34 @@ import { formatUTCDate } from "../../../../utils/dateUtils";
 const AppointmentTable = () => {
     const navigate = useNavigate();
     const [appointments, setAppointments] = useState([]);
-    console.log("appointments: ", appointments);
-    useEffect(() => {
-        const fetchAppointments = async () => {
-            try {
-                const data = await getTodayAppointments();
-                setAppointments(data);
-            } catch (err) {
-                console.error("Lỗi khi tải lịch hẹn hôm nay:", err);
-            }
-        };
-        fetchAppointments();
+
+    const fetchAppointments = useCallback(async () => {
+        try {
+            const data = await getTodayAppointments();
+            setAppointments(data);
+        } catch (err) {
+            console.error("Lỗi khi tải lịch hẹn hôm nay:", err);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchAppointments();
+
+        const onFocus = () => fetchAppointments();
+        const onVisibility = () => {
+            if (!document.hidden) fetchAppointments();
+        };
+        const intervalId = setInterval(fetchAppointments, 15000);
+
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVisibility);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
+    }, [fetchAppointments]);
 
     // Hàm ánh xạ trạng thái lịch hẹn sang tiếng Việt + màu sắc
     const getStatusInfo = (status) => {

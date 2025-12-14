@@ -61,6 +61,21 @@ export default function Appointment() {
 
     useEffect(() => {
         fetchAppointments();
+
+        const onFocus = () => fetchAppointments();
+        const onVisibility = () => {
+            if (!document.hidden) fetchAppointments();
+        };
+        const intervalId = setInterval(fetchAppointments, 15000);
+
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVisibility);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
     }, [fetchAppointments]);
 
     const handleCreateVisit = async (dataVisit) => {
