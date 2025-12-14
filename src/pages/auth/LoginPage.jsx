@@ -63,6 +63,8 @@ const LoginPage = () => {
             }
             break;
           case "OWNER":
+            navigate("/owner/dashboard");
+            break;
           case "ADMIN":
             navigate("/admin/dashboard");
             break;
