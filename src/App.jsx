@@ -43,6 +43,9 @@ import DiagnosticIndicationListPage from './pages/doctor/diagnostic/DiagnosticIn
 import DiagnosticImageResultPage from './pages/doctor/diagnostic/DiagnosticImageResultPage';
 import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/DiagnosticCompletedResultsPage';
 
+import OwnerDashboard from "./pages/owner/OwnerDashboard";
+import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
+
 function App() {
     return (
         <AuthProvider>
@@ -99,6 +102,7 @@ function App() {
                         <Route path='/diagnostic/indication/:id/result' element={<DiagnosticImageResultPage />} />
                         <Route path='/diagnostic/completed-results' element={<DiagnosticCompletedResultsPage />} />
 
+                        {/* Receptionist routes */}
                         <Route
                             path="/receptionist/home"
                             element={<ReceptionistDashboard />}
@@ -119,6 +123,8 @@ function App() {
                             path="/receptionist/invoice"
                             element={<InvoicePage />}
                         />
+
+                        {/* Pharmacist routes */}
                         <Route
                             path="/pharmacist/home"
                             element={<PharmacistDashboard />}
@@ -134,6 +140,17 @@ function App() {
                         <Route
                             path="/pharmacist/schedule"
                             element={<PharmacistSchedule />}
+                        />
+
+                        {/* Owner routes */}
+                        <Route
+                            path="/owner/dashboard"
+                            element={<OwnerDashboard />}
+                        />
+
+                        <Route
+                            path="/owner/manage-schedule-staff"
+                            element={<ManageScheduleStaff />}
                         />
                     </Route>
 
