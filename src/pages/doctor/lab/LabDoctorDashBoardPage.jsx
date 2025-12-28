@@ -142,7 +142,7 @@ const LabDoctorDashBoardPage = () => {
                             <h2 className="text-xl font-semibold text-gray-800 mb-4">
                                 Truy cập nhanh
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <button
                                     onClick={() => navigate("/lab/indications")}
                                     className="flex items-center gap-4 p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all"
@@ -195,10 +195,40 @@ const LabDoctorDashBoardPage = () => {
                                     </div>
                                     <div className="text-left">
                                         <h3 className="font-semibold text-gray-800">
-                                            Kết quả đã xử lý
+                                            Kết quả hôm nay
                                         </h3>
                                         <p className="text-sm text-gray-600">
-                                            Xem và in các kết quả xét nghiệm đã hoàn thành
+                                            Xem và in các kết quả xét nghiệm đã hoàn thành hôm nay
+                                        </p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate("/lab/results")}
+                                    className="flex items-center gap-4 p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-all"
+                                >
+                                    <div className="bg-purple-100 p-3 rounded-full">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-6 w-6 text-purple-600"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="font-semibold text-gray-800">
+                                            Lịch sử kết quả
+                                        </h3>
+                                        <p className="text-sm text-gray-600">
+                                            Tra cứu tất cả kết quả xét nghiệm đã hoàn thành
                                         </p>
                                     </div>
                                 </button>

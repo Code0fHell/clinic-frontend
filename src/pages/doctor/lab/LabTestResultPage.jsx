@@ -84,9 +84,9 @@ const LabTestResultPage = () => {
 
             showToast("Lưu kết quả xét nghiệm thành công", "success");
 
-            // Chuyển hướng đến trang danh sách sau 1.5s
+            // Chuyển hướng đến trang danh sách kết quả đã hoàn thành sau 1.5s
             setTimeout(() => {
-                navigate("/lab/indications");
+                navigate("/lab/completed-results");
             }, 1500);
         } catch (error) {
             console.error("Lỗi khi lưu kết quả xét nghiệm:", error);
