@@ -111,18 +111,33 @@ const Header = () => {
               </svg>
             </button>
             {dropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={() => { setDropdown(false); navigate("/profile"); }}
+                  className="block w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                  onClick={() => { setDropdown(false); navigate("/profile/account"); }}
                 >
-                  Xem thông tin cá nhân
+                  <div className="flex items-center gap-2">
+                    <span>👤</span>
+                    <span className="font-medium">Thông tin tài khoản</span>
+                  </div>
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                  onClick={() => { setDropdown(false); navigate("/profile/medical-records"); }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>📋</span>
+                    <span className="font-medium">Hồ sơ bệnh án</span>
+                  </div>
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors text-red-600"
                   onClick={handleLogout}
                 >
-                  Đăng xuất
+                  <div className="flex items-center gap-2">
+                    <span>🚪</span>
+                    <span className="font-medium">Đăng xuất</span>
+                  </div>
                 </button>
               </div>
             )}
