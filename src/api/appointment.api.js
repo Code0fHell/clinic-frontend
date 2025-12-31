@@ -30,11 +30,44 @@ export const guestBookAppointment = async (dto) => {
   return res.data;
 };
 
-// DS lịch hôm nay
-export const getTodayAppointments = async () => {
-  const res = await axiosClient.get("/appointment/today");
-  return res.data;
+// DS lịch hôm nay, lọc, phân trang, tìm kiếm
+export const getTodayAppointments = async ({
+  date = "",        // dd/MM/yyyy
+  keyword = "",
+  visitFilter = 'all',
+  page = 1,
+  limit = 10,
+} = {}) => {
+  try {
+    const res = await axiosClient.get('/appointment/today', {
+      params: {
+        date,
+        visitFilter,
+        keyword,
+        page,
+        limit
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    console.error(
+      "Lỗi khi lấy danh sách lịch hẹn:",
+      err.response?.data || err.message
+    );
+    return {
+      data: [],
+      pagination: {
+        total: 0,
+        page,
+        limit,
+        offset: 0,
+        totalPages: 0
+      },
+    };
+  }
 };
+
 
 // Tất cả lịch hẹn
 export const getAllAppointments = async () => {
