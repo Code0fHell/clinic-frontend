@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import CreateVisitForm from "./components/CreateVisitForm";
@@ -7,17 +7,31 @@ import { createVisit } from "../../api/visit.api";
 import Toast from "../../components/modals/Toast";
 
 export default function Appointment() {
+    const getVietnamDateString = () => {
+        const now = new Date();
+        const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        return vnTime.toISOString().split("T")[0];
+    };
     const [appointments, setAppointments] = useState([]);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [creatingVisit, setCreatingVisit] = useState(false);
+    const dateInputRef = useRef(null);
+    const [visitFilter, setVisitFilter] = useState("all");
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [dateFilter, setDateFilter] = useState(() => getVietnamDateString()); // yyyy-mm-dd
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const pageSizeOptions = [5, 10, 25, 50, 100];
+    const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
+
     const [toast, setToast] = useState({
         show: false,
         message: "",
         type: "success",
     });
-    const dateInputRef = useRef(null);
 
     const showToast = (message, type = "success") => {
         setToast({ show: true, message, type });
@@ -26,26 +40,25 @@ export default function Appointment() {
     const fetchAppointments = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await getTodayAppointments();
-            if (Array.isArray(res)) {
-                setAppointments(res);
-            } else if (res?.data) {
-                setAppointments(res.data || res);
-            } else {
-                setAppointments([]);
-            }
 
+            const res = await getTodayAppointments({
+                date: dateFilter, // yyyy-mm-dd
+                keyword: searchTerm,
+                visitFilter,
+                page: currentPage,
+                limit: itemsPerPage,
+            });
+
+            setAppointments(res.data || []);
+            setTotalPages(res.pagination?.totalPages);
             setError(null);
-            setCurrentPage(1);
         } catch (err) {
             console.error("Lỗi khi tải lịch hẹn:", err);
             setError("Không thể tải danh sách lịch hẹn");
         } finally {
             setLoading(false);
         }
-    }, []);
-
-    // console.log("appointments: " + appointments);
+    }, [dateFilter, searchTerm, visitFilter, currentPage, itemsPerPage]);
 
     const openDatePicker = () => {
         if (!dateInputRef.current) return;
@@ -60,23 +73,28 @@ export default function Appointment() {
     };
 
     useEffect(() => {
-        fetchAppointments();
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
 
-        const onFocus = () => fetchAppointments();
-        const onVisibility = () => {
-            if (!document.hidden) fetchAppointments();
-        };
-        const intervalId = setInterval(fetchAppointments, 15000);
-
-        window.addEventListener("focus", onFocus);
-        document.addEventListener("visibilitychange", onVisibility);
+        debounceRef.current = setTimeout(() => {
+            fetchAppointments();
+        }, 500);
 
         return () => {
-            clearInterval(intervalId);
-            window.removeEventListener("focus", onFocus);
-            document.removeEventListener("visibilitychange", onVisibility);
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
         };
-    }, [fetchAppointments]);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        fetchAppointments();
+    }, [dateFilter, visitFilter, currentPage, itemsPerPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     const handleCreateVisit = async (dataVisit) => {
         try {
@@ -86,7 +104,7 @@ export default function Appointment() {
             if (!visitEntity?.id) {
                 throw new Error("Không xác định được ID lượt khám vừa tạo");
             }
-            showToast("Đã tạo lượt khám và phiếu khám thành công");
+            showToast("Đã thêm vào thăm khám thành công");
             setSelectedAppointment(null);
             await fetchAppointments();
         } catch (err) {
@@ -98,37 +116,10 @@ export default function Appointment() {
         }
     };
 
-    // --- Bộ lọc tìm kiếm, phân trang ---
-    const [searchTerm, setSearchTerm] = useState("");
-    const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().slice(0, 10)); // yyyy-mm-dd
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(6);
-    const pageSizeOptions = [5, 10, 25, 50, 100];
-
-    const filteredData = useMemo(() => {
-        return appointments.filter((item) => {
-            const name = (item.patient?.patient_full_name || "Không có tên").toLowerCase();
-            const nameMatch = name.includes(searchTerm.toLowerCase());
-
-            if (!dateFilter) return nameMatch;
-
-            const itemDate = item.scheduled_date ? new Date(item.scheduled_date).toISOString().slice(0, 10) : null;
-            const dateMatch = itemDate === dateFilter;
-
-            return nameMatch && dateMatch;
-        });
-    }, [appointments, searchTerm, dateFilter]);
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        return filteredData.slice(start, end);
-    }, [filteredData, currentPage, itemsPerPage]);
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
     const goToPage = (page) => {
-        if (page >= 1 && page <= totalPages) setCurrentPage(page);
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     const handleItemsPerPageChange = (value) => {
@@ -207,7 +198,7 @@ export default function Appointment() {
                                     </span>
 
                                     <input
-                                        max={new Date().toISOString().slice(0, 10)}
+                                        max={getVietnamDateString()}
                                         ref={dateInputRef}
                                         type="date"
                                         value={dateFilter}
@@ -226,7 +217,10 @@ export default function Appointment() {
                                     type="text"
                                     placeholder="Tìm kiếm theo tên hoặc số điện thoại"
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        // setCurrentPage(1);
+                                    }}
                                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-base
                                                focus:outline-none focus:ring-2 focus:ring-[#008080] transition
                                                placeholder:text-gray-400"
@@ -284,6 +278,11 @@ export default function Appointment() {
                                                         Số ĐT
                                                     </th>
 
+                                                    <th className="w-[130px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
+                                sticky top-0 z-10 border-b border-r border-gray-200">
+                                                        Địa chỉ
+                                                    </th>
+
                                                     <th className="w-[160px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
                                 sticky top-0 z-10 border-b border-r border-gray-200">
                                                         Bác sĩ
@@ -299,44 +298,65 @@ export default function Appointment() {
                                                         Lý do
                                                     </th>
 
-                                                    <th className="w-[180px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
-                                sticky top-0 z-10 border-b border-gray-200">
-                                                        Thao tác
+                                                    <th className="w-[180px] px-3 py-2 bg-gray-100 font-semibold text-gray-700
+               sticky top-0 z-10 border-b border-gray-200">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span>Thao tác</span>
+
+                                                            <select
+                                                                value={visitFilter}
+                                                                onChange={(e) => {
+                                                                    setVisitFilter(e.target.value);
+                                                                    setCurrentPage(1);
+                                                                }}
+                                                                className="w-[90px] border border-gray-300 rounded-md 
+                                                                            px-1 py-[2px] text-xs
+                                                                            focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                                                <option value="all">Tất cả</option>
+                                                                <option value="added">Đã thêm thăm khám</option>
+                                                                <option value="not_added">Chưa thêm thăm khám</option>
+                                                            </select>
+                                                        </div>
                                                     </th>
                                                 </tr>
                                             </thead>
 
                                             {/* ===== TBODY ===== */}
                                             <tbody className="text-gray-700 divide-y divide-gray-200">
-                                                {paginatedData.length > 0 ? (
-                                                    paginatedData.map((item, index) => (
+                                                {appointments.length > 0 ? (
+                                                    appointments.map((item, index) => (
                                                         <tr
                                                             key={item.id}
                                                             className="text-[15px] hover:bg-gray-50 transition-colors"
                                                         >
                                                             {/* STT */}
                                                             <td className="w-12 px-2 py-2 text-right border-r border-gray-200">
-                                                                {index + 1}
+                                                                {(currentPage - 1) * itemsPerPage + index + 1}
                                                             </td>
 
                                                             {/* Bệnh nhân */}
                                                             <td className="w-[180px] px-3 py-2 truncate border-r border-gray-200">
-                                                                {item.patient?.user.full_name || "Chưa có tên"}
+                                                                {item.patient?.name || "Chưa có tên"}
                                                             </td>
 
                                                             {/* Giới tính */}
                                                             <td className="w-[90px] px-3 py-2 border-r border-gray-200">
-                                                                {item.patient?.user.gender === "NAM" ? "Nam" : "Nữ" || "—"}
+                                                                {item.patient?.gender === "NAM" ? "Nam" : "Nữ" || "—"}
                                                             </td>
 
                                                             {/* Số ĐT */}
                                                             <td className="w-[130px] px-3 py-2 border-r border-gray-200">
-                                                                {item.patient?.user.phone || "—"}
+                                                                {item.patient?.phone || "—"}
+                                                            </td>
+
+                                                            {/* Địa chỉ */}
+                                                            <td className="w-[130px] px-3 py-2 border-r border-gray-200">
+                                                                {item.patient?.address || "—"}
                                                             </td>
 
                                                             {/* Bác sĩ */}
                                                             <td className="w-[160px] px-3 py-2 truncate border-r border-gray-200">
-                                                                {item.doctor?.user.full_name || "Không rõ"}
+                                                                {item.doctor?.name || "Không rõ"}
                                                             </td>
 
                                                             {/* Thời gian */}
@@ -359,9 +379,9 @@ export default function Appointment() {
                                                                         setSelectedAppointment({
                                                                             ...item,
                                                                             patient_name:
-                                                                                item.patient?.user?.full_name || "Không rõ",
+                                                                                item.patient?.name || "Không rõ",
                                                                             doctor_name:
-                                                                                item.doctor?.user?.full_name || "Không rõ",
+                                                                                item.doctor?.name || "Không rõ",
                                                                             patient_id: item.patient?.id,
                                                                             doctor_id: item.doctor?.id,
                                                                             appointment_id: item.id,
@@ -386,7 +406,7 @@ export default function Appointment() {
                                                             colSpan={8}
                                                             className="px-3 py-6 text-center text-gray-500 text-base"
                                                         >
-                                                            Không có lịch hẹn nào hôm nay.
+                                                            Không có dữ liệu
                                                         </td>
                                                     </tr>
                                                 )}

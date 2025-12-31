@@ -1,53 +1,48 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Toast from '../../components/modals/Toast';
 import { createPortal } from "react-dom";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import CreatePatientForm from "./components/CreatePatientForm";
 import CreateVisitForm from "./components/CreateVisitForm";
-import { getTodayVisit, getDetailVisit, createVisit } from "../../api/visit.api";
-import { getAllPatient, createPatient, getAvailableDoctorToday } from "../../api/patient.api";
+import { getTodayVisit, createVisit, checkVisitToday } from "../../api/visit.api";
+import { getAllPatient, createPatient, getAvailableDoctorToday, exportPatientExcel } from "../../api/patient.api";
 import { PatientInfo } from "./components/PatientInfo";
-
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 export default function Patient() {
-    const [searchPatient, setSearchPatient] = useState("");
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showCreateVisitForm, setShowCreateVisitForm] = useState(false);
-    const [showCreateInvoiceForm, setShowCreateInvoiceForm] = useState(false);
     const [selectedForVisit, setSelectedForVisit] = useState(null);
-    const [dataVisit, setDataVisit] = useState([]);
     const [dataPatient, setDataPatient] = useState([]);
     const [doctorAvailable, setDoctorAvailable] = useState([]);
+    const [totalPages, setTotalPages] = useState(0);
+    const [keyword, setKeyword] = useState("");
+    const [searchInput, setSearchInput] = useState(""); // giá trị gõ ngay lập tức
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(6);
+    const [itemsPerPage, setItemsPerPage] = useState(10); // số phần tử trong 1 page
     const pageSizeOptions = [5, 10, 25, 50, 100];
+    const [visitFilter, setVisitFilter] = useState("all");
+    const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
 
-    // Phân trang
-    const filteredData = useMemo(() => {
-        return dataPatient.filter((item) => {
-            const name = (item.patient?.patient_full_name || "Không có tên").toLowerCase();
-            const nameMatch = name.includes(searchPatient.toLowerCase());
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
 
-            // if (!dateFilter) return nameMatch;
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
 
-            // const itemDate = item.scheduled_date ? new Date(item.scheduled_date).toISOString().slice(0, 10) : null;
-            // const dateMatch = itemDate === dateFilter;
-
-            return nameMatch;
-        });
-    }, [dataPatient, searchPatient]);
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        return filteredData.slice(start, end);
-    }, [filteredData, currentPage, itemsPerPage]);
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        setTimeout(() => {
+            setToast({ show: false, message: "", type: "success" });
+        }, 2000);
+    };
 
     const goToPage = (page) => {
-        if (page >= 1 && page <= totalPages) setCurrentPage(page);
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
     };
 
     const handleItemsPerPageChange = (value) => {
@@ -72,30 +67,35 @@ export default function Patient() {
     };
 
     useEffect(() => {
-        const fetchDataVisit = async () => {
-            try {
-                const data = await getTodayVisit();
-                setDataVisit(data);
-            } catch (err) {
-                console.error("Lỗi khi lấy dữ liệu Visit:", err);
-            }
-        };
-
-        fetchDataVisit();
-    }, []);
-
-    useEffect(() => {
         const fetchDataPatient = async () => {
             try {
-                const data = await getAllPatient();
-                setDataPatient(data);
+                const res = await getAllPatient({
+                    visitFilter,
+                    keyword,
+                    page: currentPage,
+                    limit: itemsPerPage
+                });
+
+                setDataPatient(res.data);
+                setTotalPages(res.pagination.totalPages);
             } catch (err) {
-                console.error("Lỗi khi lấy dữ liệu Visit:", err);
+                console.error("Lỗi khi lấy dữ liệu Patient:", err);
             }
         };
 
         fetchDataPatient();
+
+    }, [currentPage, itemsPerPage, keyword, visitFilter]);
+
+    // reset debounce để tránh leak memory
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
     }, []);
+
 
     useEffect(() => {
         const fetchDoctorAvailable = async () => {
@@ -120,23 +120,13 @@ export default function Patient() {
         setShowCreateVisitForm(false);
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('vi-VN')
-            .format(date)
-            .split('/')
-            .join('-');
-    };
-
     // Đóng modal khi nhấn ESC
     useEffect(() => {
         const handleEsc = (e) => {
             if (e.key === "Escape") {
                 setSelectedPatient(null);
-                setOpenMenuIndex(null);
                 setShowCreateForm(false);
                 setShowCreateVisitForm(false);
-                setShowCreateInvoiceForm(false);
             }
         };
         window.addEventListener("keydown", handleEsc);
@@ -145,7 +135,7 @@ export default function Patient() {
 
     // === KHÓA SCROLL + ÉP NỀN TRẮNG KHI MODAL MỞ ===
     useEffect(() => {
-        if (selectedPatient || showCreateForm || showCreateVisitForm || showCreateInvoiceForm) {
+        if (selectedPatient || showCreateForm || showCreateVisitForm) {
             const scrollY = window.scrollY;
 
             document.body.style.position = 'fixed';
@@ -167,7 +157,7 @@ export default function Patient() {
                 window.scrollTo(0, parseInt(scrollY || '0') * -1);
             }
         }
-    }, [selectedPatient, showCreateForm, showCreateVisitForm, showCreateInvoiceForm]);
+    }, [selectedPatient, showCreateForm, showCreateVisitForm]);
 
     // Tính số tuổi
     const calculateAge = (dob) => {
@@ -189,7 +179,7 @@ export default function Patient() {
         { label: "Số ĐT", align: "left" },
         { label: "Địa chỉ", align: "left" },
         { label: "Ngày sinh", align: "left" },
-        { label: "Thao tác", align: "left" },
+        { label: "Thao tác", align: "left", hasFilter: true },
     ];
 
     // Hàm render bảng
@@ -217,7 +207,25 @@ export default function Patient() {
                                             whitespace-nowrap
                                         `}
                                         >
-                                            {header.label}
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span>{header.label}</span>
+
+                                                {header.hasFilter && (
+                                                    <select
+                                                        value={visitFilter}
+                                                        onChange={(e) => {
+                                                            setVisitFilter(e.target.value);
+                                                            setCurrentPage(1);
+                                                        }}
+                                                        className="border border-gray-300 rounded-md px-2 py-1 text-xs
+               focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                    >
+                                                        <option value="all">Tất cả</option>
+                                                        <option value="added">Đã thêm thăm khám</option>
+                                                        <option value="not_added">Chưa thêm thăm khám</option>
+                                                    </select>
+                                                )}
+                                            </div>
                                         </th>
                                     ))}
                                 </tr>
@@ -279,10 +287,17 @@ export default function Patient() {
                                     <i className="fas fa-plus"></i> Thêm bệnh nhân
                                 </button>
 
-                                <button className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-[13px] font-medium hover:bg-gray-50 cursor-pointer flex items-center gap-2 whitespace-nowrap">
+                                {/* <button className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-[13px] font-medium hover:bg-gray-50 cursor-pointer flex items-center gap-2 whitespace-nowrap">
                                     <i className="fas fa-file-excel"></i> Nhập từ Excel
-                                </button>
-                                <button className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-[13px] font-medium hover:bg-gray-50 cursor-pointer flex items-center gap-2 whitespace-nowrap">
+                                </button> */}
+                                <button
+                                    onClick={() =>
+                                        exportPatientExcel({
+                                            keyword,
+                                            visitFilter,
+                                        })
+                                    }
+                                    className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-[13px] font-medium hover:bg-gray-50 cursor-pointer flex items-center gap-2 whitespace-nowrap">
                                     <i className="fas fa-download"></i> Xuất ra Excel
                                 </button>
                             </div>
@@ -294,10 +309,19 @@ export default function Patient() {
                                 <input
                                     type="text"
                                     placeholder="Tìm kiếm theo tên hoặc số điện thoại"
-                                    value={searchPatient}
+                                    value={searchInput}
                                     onChange={(e) => {
-                                        setSearchPatient(e.target.value);
-                                        // setCurrentPage(1); // Nếu có phân trang
+                                        const value = e.target.value;
+                                        setSearchInput(value);
+
+                                        if (debounceRef.current) {
+                                            clearTimeout(debounceRef.current);
+                                        }
+
+                                        debounceRef.current = setTimeout(() => {
+                                            setKeyword(value);
+                                            setCurrentPage(1);
+                                        }, 500); // delay 500ms
                                     }}
                                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-base
                            focus:outline-none focus:ring-2 focus:ring-[#008080] transition
@@ -325,14 +349,11 @@ export default function Patient() {
                             headers,
                             (patient, index) => {
                                 // Check bệnh nhân này có visit CHECKED_IN hay không
-                                const hasActiveVisit = dataVisit.some(
-                                    (visit) =>
-                                        visit.patient?.id === patient.id && visit.visit_status === "CHECKED_IN"
-                                );
+                                // const hasActiveVisit = async()=>await checkVisitToday(patient.id);
 
                                 return (
                                     <>
-                                        <td className="pl-2 pr-4 py-2 text-right align-middle truncate border-r border-gray-200">{index + 1}</td>
+                                        <td className="pl-2 pr-4 py-2 text-right align-middle truncate border-r border-gray-200">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                                         <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">{patient.patient_full_name}</td>
                                         <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">{patient.patient_gender === "NU" ? "Nữ" : "Nam"}</td>
                                         <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">{patient.patient_phone}</td>
@@ -349,30 +370,51 @@ export default function Patient() {
                                             )}
                                         </td>
 
-                                        <td className="px-2 py-2 text-left align-middle whitespace-nowrap">
-                                            <button
-                                                className="text-teal-600 hover:text-teal-800 cursor-pointer mr-3 text-sm font-medium transition"
-                                                onClick={() => {
-                                                    setSelectedPatient(patient);
-                                                }}
-                                            >
-                                                Chi tiết
-                                            </button>
+                                        <td className="w-[100px] px-2 py-2 text-left align-middle whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                {/* Thêm vào thăm khám */}
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedForVisit(patient);
+                                                        setShowCreateVisitForm(true);
+                                                    }}
+                                                    disabled={patient.hasVisitToday}
+                                                    className={`font-semibold py-2 px-4 rounded-lg text-[13px] shadow-md transition duration-150
+                                                    ${patient.hasVisitToday
+                                                            ? "bg-gray-400 cursor-not-allowed text-white"
+                                                            : "hover:cursor-pointer bg-[#008080] hover:bg-teal-600 text-white"
+                                                        }`}
+                                                >
+                                                    Thêm vào thăm khám
+                                                </button>
 
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedForVisit(patient);
-                                                    setShowCreateVisitForm(true);
-                                                }}
-                                                disabled={hasActiveVisit}
-                                                className={`font-semibold py-3 px-6 rounded-lg text-[13px] shadow-md transition duration-150
-              ${hasActiveVisit
-                                                        ? "bg-gray-400 cursor-not-allowed text-white"
-                                                        : "hover:cursor-pointer bg-[#008080] hover:bg-teal-600 text-white"
-                                                    }`}
-                                            >
-                                                Thêm vào thăm khám
-                                            </button>
+                                                {/* Chi tiết */}
+                                                <button
+                                                    title="Chi tiết"
+                                                    className="p-2 rounded-full text-teal-600 hover:bg-teal-50 hover:text-teal-800 hover:cursor-pointer transition"
+                                                    onClick={() => setSelectedPatient(patient)}
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+
+                                                {/* Cập nhật */}
+                                                <button
+                                                    title="Cập nhật"
+                                                    className="p-2 rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-800 hover:cursor-pointer transition"
+                                                    onClick={() => setSelectedPatientForEdit(patient)}
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+
+                                                {/* Xóa */}
+                                                {/* <button
+                                                    title="Xóa"
+                                                    className="p-2 rounded-full text-red-600 hover:bg-red-50 hover:text-red-800 hover:cursor-pointer transition"
+                                                    onClick={() => handleDeletePatient(patient.id)}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button> */}
+                                            </div>
                                         </td>
                                     </>
                                 );
@@ -487,7 +529,6 @@ export default function Patient() {
                         {/* Body */}
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
                                 {/* Cột 1: Thông tin cơ bản */}
                                 <div className="space-y-5">
                                     {/* <PatientInfo label="Mã bệnh nhân" value={selectedPatient.id} /> */}
@@ -496,20 +537,18 @@ export default function Patient() {
                                     <PatientInfo label="Ngày sinh" value={selectedPatient.patient_dob} />
                                     <PatientInfo label="Số điện thoại" value={selectedPatient.patient_phone} />
                                     <PatientInfo label="Địa chỉ" value={selectedPatient.patient_address} />
-
+                                    <PatientInfo label="Họ & tên bố / mẹ" value={selectedPatient.fatherORmother_name} />
+                                    <PatientInfo label="SĐT bố / mẹ" value={selectedPatient.mother_phone} />
                                 </div>
 
                                 {/* Cột 2: Thông tin sức khỏe */}
                                 <div className="space-y-5">
-                                    <PatientInfo label="Họ & tên bố / mẹ" value={selectedPatient.fatherORmother_name} />
-                                    <PatientInfo label="SĐT bố / mẹ" value={selectedPatient.mother_phone} />
-                                    <PatientInfo label="Chiều cao" value={selectedPatient.height} />
-                                    <PatientInfo label="Cân nặng" value={selectedPatient.weight} />
+                                    <PatientInfo label="Chiều cao (cm)" value={selectedPatient.height} />
+                                    <PatientInfo label="Cân nặng (kg)" value={selectedPatient.weight} />
                                     <PatientInfo label="Nhóm máu" value={selectedPatient.blood_type} />
                                     <PatientInfo label="Huyết áp" value={selectedPatient.respiratory_rate} />
                                     <PatientInfo label="Tiền xử bệnh lý" value={selectedPatient.medical_history} />
                                 </div>
-
                             </div>
                         </div>
                     </div>
@@ -521,7 +560,7 @@ export default function Patient() {
             {showCreateForm && createPortal(
                 <div
                     className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
-                    onClick={() => setShowCreateForm(false)} // Click nền mờ → đóng
+                    onClick={() => setShowCreateForm(false)}
                 >
                     {/* LỚP MỜ NỀN */}
                     <div className="absolute inset-0 bg-white/60 bg-opacity-50 transition-opacity"></div>
@@ -534,18 +573,14 @@ export default function Patient() {
                         <CreatePatientForm
                             onSubmit={async (data) => {
                                 try {
-                                    // console.log("Gửi dữ liệu bệnh nhân:", data);
-
-                                    const newPatient = await createPatient(data);
-                                    console.log("Tạo bệnh nhân thành công:", newPatient);
-
-                                    setDataPatient((prev) => [...prev, newPatient]);
-
-                                    // Đóng form
+                                    await createPatient(data);
                                     setShowCreateForm(false);
+                                    showToast("Thêm bệnh nhân thành công!", "success");
                                 } catch (error) {
-                                    console.error("Lỗi khi tạo bệnh nhân:", error);
-                                    // alert(error.response?.data?.message || "Không thể tạo bệnh nhân, vui lòng thử lại!");
+                                    // console.error("Lỗi khi tạo bệnh nhân:", error);
+                                    const message = error?.response?.data?.message || error.message || "Thêm bệnh nhân không thành công!";
+                                    setShowCreateForm(false);
+                                    showToast(message, "error");
                                 }
                             }}
                             onClose={() => setShowCreateForm(false)}
@@ -555,6 +590,22 @@ export default function Patient() {
                 </div>,
                 document.body
             )}
+
+            {/* Toast */}
+            {toast.show && (
+                <div
+                    className={`fixed top-20 right-5 px-4 py-3 rounded shadow-lg text-white z-[9999]
+            ${{
+                            success: "bg-green-500",
+                            error: "bg-red-500",
+                            warn: "bg-yellow-500",
+                        }[toast.type] || "bg-green-500"
+                        }`}
+                >
+                    {toast.message}
+                </div>
+            )}
+
         </div>
     );
 }
