@@ -71,7 +71,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
 
         // Validation: kiểm tra total có dữ liệu
         if (!totalAmount || totalAmount <= 0) {
-            alert("❌ Lỗi: Tổng tiền không được để trống hoặc phải > 0\n\nNếu loại hóa đơn là 'Lâm sàng', vui lòng kiểm tra phí khám bệnh trong phiếu khám.");
+            alert("Lỗi: Tổng tiền không được để trống hoặc phải > 0\n\nNếu loại hóa đơn là 'Lâm sàng', vui lòng kiểm tra phí khám bệnh trong phiếu khám.");
             return;
         }
 
@@ -108,7 +108,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white w-[600px] rounded-2xl shadow-lg p-6 relative">
+            <div className="bg-white w-[600px] rounded-2xl shadow-lg p-6 relative text-sm">
                 {/* Nút đóng */}
                 <button
                     onClick={onClose}
@@ -145,7 +145,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                         >
                             <option value="CLINICAL">Lâm sàng</option>
                             <option value="SERVICE">Dịch vụ</option>
-                            <option value="MEDICINE">Thuốc</option>
+                            {/* <option value="MEDICINE">Thuốc</option> */}
                         </select>
                     </div>
 
@@ -208,7 +208,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                             <p className="text-sm text-gray-500 mt-1">
                                 {formData.total
                                     ? `Phí khám bệnh: ${Number(formData.total).toLocaleString("vi-VN")} ₫`
-                                    : "⚠️ Lỗi: Phí khám bệnh không có dữ liệu"}
+                                    : "Lỗi: Phí khám bệnh không có dữ liệu"}
                             </p>
                         )}
                     </div>

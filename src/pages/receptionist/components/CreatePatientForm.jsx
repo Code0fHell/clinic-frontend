@@ -49,7 +49,19 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
         // Convert các chuỗi trống thành undefined
         const cleanedData = {};
         Object.keys(formData).forEach((key) => {
-            cleanedData[key] = formData[key] === "" ? undefined : formData[key];
+            let value = formData[key];
+
+            if (value === "") {
+                cleanedData[key] = undefined;
+                return;
+            }
+
+            // ÉP KIỂU NUMBER CHO CÁC FIELD SỐ
+            if (["height", "weight", "pulse_rate"].includes(key)) {
+                cleanedData[key] = Number(value);
+            } else {
+                cleanedData[key] = value;
+            }
         });
 
         if (onSubmit) onSubmit(cleanedData);
@@ -57,7 +69,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white w-[900px] rounded-2xl shadow-xl p-5 relative">
+            <div className="bg-white w-[760px] rounded-xl shadow-xl p-4 relative text-sm">
                 {/* Nút đóng */}
                 {onClose && (
                     <button
@@ -81,20 +93,19 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                     </button>
                 )}
 
-                <h2 className="text-2xl font-bold text-gray-700 mb-6 text-center">
+                <h2 className="text-xl font-bold text-gray-700 mb-6 text-center">
                     Thêm bệnh nhân
                 </h2>
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
                     {/* Thông tin bệnh nhân */}
                     <div className="space-y-2 border-r border-gray-200 pr-6">
-                        <h3 className="text-lg font-semibold text-teal-700 border-b border-gray-200 pb-1">
+                        <h3 className="text-base font-semibold text-teal-700 border-b border-gray-200 pb-1">
                             Thông tin bệnh nhân
                         </h3>
 
-                        {/* Họ và tên */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Họ & tên <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -114,9 +125,8 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                             )}
                         </div>
 
-                        {/* Ngày sinh */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Ngày sinh <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -136,9 +146,8 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                             )}
                         </div>
 
-                        {/* Giới tính */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Giới tính <span className="text-red-500">*</span>
                             </label>
                             <select
@@ -153,9 +162,8 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                             </select>
                         </div>
 
-                        {/* Địa chỉ */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Địa chỉ <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -177,7 +185,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
 
                         {/* Số điện thoại */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Số điện thoại
                             </label>
                             <input
@@ -193,16 +201,9 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                                 </p>
                             )}
                         </div>
-                    </div>
-
-                    {/* Cột phải: Thông tin gia đình & y tế */}
-                    <div className="space-y-2 pl-4">
-                        <h3 className="text-lg font-semibold text-teal-700 border-b border-gray-200 pb-1">
-                            Thông tin gia đình & sức khỏe
-                        </h3>
 
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Họ & tên bố / mẹ
                             </label>
                             <input
@@ -215,7 +216,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                         </div>
 
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 SĐT bố / mẹ
                             </label>
                             <input
@@ -226,9 +227,44 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
                             />
                         </div>
+                    </div>
+
+                    {/* Cột phải: Thông tin gia đình & y tế */}
+                    <div className="space-y-2 pl-4">
+                        <h3 className="text-base font-semibold text-teal-700 border-b border-gray-200 pb-1">
+                            Thông tin sức khỏe
+                        </h3>
 
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
+                                Chiều cao (cm)
+                            </label>
+                            <input
+                                type="number"
+                                name="height"
+                                value={formData.height}
+                                onChange={handleChange}
+                                placeholder="VD: 175"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
+                                Cân nặng (kg)
+                            </label>
+                            <input
+                                type="number"
+                                name="weight"
+                                value={formData.weight}
+                                onChange={handleChange}
+                                placeholder="VD: 60"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Nhóm máu
                             </label>
                             <input
@@ -242,7 +278,7 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                         </div>
 
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Tần số hô hấp
                             </label>
                             <input
@@ -256,16 +292,17 @@ export default function CreatePatientForm({ onSubmit, onClose }) {
                         </div>
 
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">
+                            <label className="block text-gray-700 font-medium mb-0.5 text-sm">
                                 Tiền sử bệnh lý
                             </label>
                             <textarea
                                 name="medical_history"
                                 value={formData.medical_history}
                                 onChange={handleChange}
-                                rows={4}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
-                            />
+                                rows={5}
+                                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 
+                                                text-sm focus:ring-1 focus:ring-[#008080]
+                                                resize-none overflow-y-auto"/>
                         </div>
                     </div>
                 </form>
