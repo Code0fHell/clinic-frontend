@@ -21,3 +21,6 @@ export const uploadAvatar = (file) => {
 
 export const getMedicalRecords = () =>
     axiosClient.get(`/medical-record/history`);
+
+export const changePassword = (data) =>
+    axiosClient.put("/user/change-password", data);

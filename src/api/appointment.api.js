@@ -75,6 +75,12 @@ export const getAllAppointments = async () => {
   return res.data;
 };
 
+// Lịch hẹn của bệnh nhân hiện tại
+export const getMyAppointments = async () => {
+  const res = await axiosClient.get("/appointment/my");
+  return res.data;
+};
+
 // Lịch hẹn trong tuần
 export const getAppointmentsThisWeek = async () => {
   const res = await axiosClient.get("/appointment/week");
@@ -86,5 +92,11 @@ export const updateAppointmentStatus = async (appointmentId, newStatus) => {
   const res = await axiosClient.put(`/appointment/${appointmentId}/status`, {
     appointment_status: newStatus,
   });
+  return res.data;
+};
+
+// Bệnh nhân hủy lịch hẹn của chính mình
+export const cancelMyAppointment = async (appointmentId) => {
+  const res = await axiosClient.put(`/appointment/${appointmentId}/cancel`);
   return res.data;
 };

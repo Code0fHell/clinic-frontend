@@ -27,7 +27,8 @@ import PharmacistMedicines from "./pages/pharmacist/Medicines";
 import PharmacistSchedule from "./pages/pharmacist/Schedule";
 import PharmacistPrescriptions from "./pages/pharmacist/Prescriptions";
 import PrivateRoute from "./routes/PrivateRoute";
-import ProfilePage from "./pages/profile/ProfilePage";
+import AccountInfoPage from "./pages/profile/AccountInfoPage";
+import MedicalRecordsPage from "./pages/profile/MedicalRecordsPage";
 import ServicePage from "./pages/services/ServicePage";
 import MedicinePage from "./pages/medicine/MedicinePage";
 import DoctorsPage from "./pages/doctors/DoctorsPage";
@@ -63,7 +64,9 @@ function App() {
                         path="/patient/booking"
                         element={<MakeAppointmentPage />}
                     />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/profile/account" element={<AccountInfoPage />} />
+                    <Route path="/profile/medical-records" element={<MedicalRecordsPage />} />
+                    <Route path="/profile" element={<AccountInfoPage />} />
                     <Route path="/services" element={<ServicePage />} />
                     <Route path="/medicines" element={<MedicinePage />} />
                     <Route path="/doctors" element={<DoctorsPage />} />

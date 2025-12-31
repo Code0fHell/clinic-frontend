@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import RoleBasedLayout from "../../components/layout/RoleBasedLayout";
-import { getAllAppointments } from "../../api/appointment.api";
+import { getMyAppointments, cancelMyAppointment } from "../../api/appointment.api";
 import { vietnameseSearch } from "../../utils/vietnameseSearch";
 import {
     parseUTCDate,
@@ -102,6 +102,16 @@ const TableFilters = ({
                     Tháng này
                 </button>
                 <button
+                    onClick={() => onDateFilterChange("upcoming")}
+                    className={`px-4 py-3 rounded-lg font-medium transition ${
+                        dateFilter === "upcoming"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
+                    }`}
+                >
+                    Lịch hẹn sắp tới
+                </button>
+                <button
                     onClick={() => onDateFilterChange("all")}
                     className={`px-4 py-3 rounded-lg font-medium transition ${
                         dateFilter === "all"
@@ -122,6 +132,7 @@ const AppointmentTable = ({
     currentPage,
     itemsPerPage,
     onPageChange,
+    onCancel,
 }) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -161,6 +172,15 @@ const AppointmentTable = ({
         );
     };
 
+    const canCancelAppointment = (appointment) => {
+        if (!appointment.scheduled_date) return false;
+        if (appointment.status !== "PENDING") return false;
+        const now = dayjs();
+        const scheduled = dayjs(appointment.scheduled_date);
+        const cutoff = scheduled.subtract(1, "day");
+        return now.isBefore(cutoff);
+    };
+
     if (appointments.length === 0) {
         return (
             <div className="text-center py-12">
@@ -188,13 +208,14 @@ const AppointmentTable = ({
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                 Trạng thái
                             </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                Hành động
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {paginatedAppointments.map((appointment) => {
-                            const scheduledDate = parseUTCDate(
-                                appointment.scheduled_date
-                            );
+                            const scheduledDate = dayjs(appointment.scheduled_date);
                             return (
                                 <tr
                                     key={appointment.id}
@@ -247,6 +268,20 @@ const AppointmentTable = ({
                                     </td>
                                     <td className="px-6 py-4">
                                         {getStatusBadge(appointment.status)}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {canCancelAppointment(appointment) ? (
+                                            <button
+                                                onClick={() => onCancel(appointment)}
+                                                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition"
+                                            >
+                                                Hủy lịch
+                                            </button>
+                                        ) : (
+                                            <span className="text-xs text-gray-400 italic">
+                                                Không thể hủy
+                                            </span>
+                                        )}
                                     </td>
                                 </tr>
                             );
@@ -313,14 +348,9 @@ const AppointmentCalendar = ({ appointments, currentDate, onDateChange }) => {
     const getAppointmentsByDayHour = (date, hour) => {
         return appointments.filter((a) => {
             if (!a.scheduled_date) return false;
-            const apptUTC = parseUTCDate(a.scheduled_date);
-            if (!apptUTC) return false;
-            const apptHour = apptUTC.hour();
-            const localDateStart = dayjs(date).startOf("day");
-            const localDateAsUTC = dayjs.utc(
-                localDateStart.format("YYYY-MM-DD")
-            );
-            return apptUTC.isSame(localDateAsUTC, "day") && apptHour === hour;
+            const appt = dayjs(a.scheduled_date);
+            if (!appt.isValid()) return false;
+            return appt.isSame(date, "day") && appt.hour() === hour;
         });
     };
 
@@ -397,13 +427,8 @@ const AppointmentCalendar = ({ appointments, currentDate, onDateChange }) => {
                                             className="relative border-r border-b h-[80px] p-1"
                                         >
                                             {appts.map((a) => {
-                                                const startUTC = parseUTCDate(
-                                                    a.scheduled_date
-                                                );
-                                                const endUTC = startUTC.add(
-                                                    30,
-                                                    "minute"
-                                                );
+                                                const start = dayjs(a.scheduled_date);
+                                                const end = start.add(30, "minute");
                                                 const color = getStatusColor(
                                                     a.status
                                                 );
@@ -414,11 +439,11 @@ const AppointmentCalendar = ({ appointments, currentDate, onDateChange }) => {
                                                     >
                                                         <div className="font-medium truncate">
                                                             {formatUTCTime(
-                                                                startUTC
+                                                                start
                                                             )}{" "}
                                                             -{" "}
                                                             {formatUTCTime(
-                                                                endUTC
+                                                                end
                                                             )}
                                                         </div>
                                                         <div className="text-[10px] truncate">
@@ -430,11 +455,11 @@ const AppointmentCalendar = ({ appointments, currentDate, onDateChange }) => {
                                                         <div className="absolute z-20 hidden group-hover:block bg-white border-2 border-blue-500 rounded-lg shadow-xl p-4 min-w-[250px] top-full left-0 mt-2">
                                                             <div className="font-semibold text-gray-800 mb-1">
                                                                 {formatUTCTime(
-                                                                    startUTC
+                                                                    start
                                                                 )}{" "}
                                                                 -{" "}
                                                                 {formatUTCTime(
-                                                                    endUTC
+                                                                    end
                                                                 )}
                                                             </div>
                                                             <div className="text-sm text-gray-600 mb-1">
@@ -487,7 +512,7 @@ const AppointmentListPage = () => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const response = await getAllAppointments();
+            const response = await getMyAppointments();
             const appointmentsData = response.data || response || [];
             setAppointments(appointmentsData);
         } catch (error) {
@@ -512,7 +537,7 @@ const AppointmentListPage = () => {
             const today = now.startOf("day");
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = parseUTCDate(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date);
                 return apptDate.isSame(today, "day");
             });
         } else if (dateFilter === "week") {
@@ -520,7 +545,7 @@ const AppointmentListPage = () => {
             const weekEnd = now.endOf("week").subtract(1, "day");
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = parseUTCDate(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date);
                 return (
                     apptDate.isAfter(weekStart.subtract(1, "day")) &&
                     apptDate.isBefore(weekEnd.add(1, "day"))
@@ -531,11 +556,17 @@ const AppointmentListPage = () => {
             const monthEnd = now.endOf("month");
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = parseUTCDate(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date);
                 return (
                     apptDate.isAfter(monthStart.subtract(1, "day")) &&
                     apptDate.isBefore(monthEnd.add(1, "day"))
                 );
+            });
+        } else if (dateFilter === "upcoming") {
+            filtered = filtered.filter((a) => {
+                if (!a.scheduled_date) return false;
+                const apptDate = dayjs(a.scheduled_date);
+                return apptDate.isAfter(now) && a.status !== "CANCELLED";
             });
         }
 
@@ -549,15 +580,13 @@ const AppointmentListPage = () => {
 
         // Sort by scheduled date (handle null values)
         filtered.sort((a, b) => {
-            const dateA = parseUTCDate(a.scheduled_date);
-            const dateB = parseUTCDate(b.scheduled_date);
+            const dateA = a.scheduled_date ? dayjs(a.scheduled_date) : null;
+            const dateB = b.scheduled_date ? dayjs(b.scheduled_date) : null;
 
-            // Handle null/undefined dates - put them at the end
             if (!dateA && !dateB) return 0;
-            if (!dateA) return 1; // dateA is null, put it after
-            if (!dateB) return -1; // dateB is null, put it after
+            if (!dateA) return 1;
+            if (!dateB) return -1;
 
-            // Both dates are valid, compare them
             return dateA.valueOf() - dateB.valueOf();
         });
 
@@ -568,6 +597,33 @@ const AppointmentListPage = () => {
     useEffect(() => {
         filterAppointments();
     }, [filterAppointments]);
+
+    const handleCancelAppointment = async (appointment) => {
+        const confirm = window.confirm(
+            "Bạn có chắc muốn hủy lịch hẹn này? Bạn chỉ được phép hủy trước ít nhất 1 ngày so với thời gian khám."
+        );
+        if (!confirm) return;
+
+        try {
+            await cancelMyAppointment(appointment.id);
+            setToast({
+                show: true,
+                message: "Hủy lịch hẹn thành công.",
+                type: "success",
+            });
+            fetchAppointments();
+        } catch (error) {
+            console.error("Error canceling appointment:", error);
+            const message =
+                error.response?.data?.message ||
+                "Không thể hủy lịch hẹn. Vui lòng thử lại sau.";
+            setToast({
+                show: true,
+                message,
+                type: "error",
+            });
+        }
+    };
 
     return (
         <RoleBasedLayout>
@@ -603,6 +659,7 @@ const AppointmentListPage = () => {
                                     currentPage={currentPage}
                                     itemsPerPage={itemsPerPage}
                                     onPageChange={setCurrentPage}
+                                    onCancel={handleCancelAppointment}
                                 />
                             )}
                         </>
