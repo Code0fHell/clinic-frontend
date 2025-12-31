@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { createVietQR, getPaymentStatus } from '../../api/payment.api';
 import './CreateVietQRModal.css';
 
-export default function CreateVietQRModal({ billId, amount, onSuccess, onClose }) {
+export default function CreateVietQRModal({ billId, amount, onSuccess, onClose, showToast }) {
     const [loading, setLoading] = useState(true);
     const [qrBase64, setQrBase64] = useState(null);
     const [checkoutUrl, setCheckoutUrl] = useState(null);
@@ -20,7 +20,7 @@ export default function CreateVietQRModal({ billId, amount, onSuccess, onClose }
             setError(null);
             try {
                 const res = await createVietQR({ bill_id: billId, amount });
-                console.log('CreateVietQR response:', res);
+                // console.log('CreateVietQR response:', res);
 
                 setPaymentId(res.paymentId);
                 setOrderCode(res.orderCode);
@@ -40,20 +40,23 @@ export default function CreateVietQRModal({ billId, amount, onSuccess, onClose }
                             console.log('QR Code generated successfully');
                             setQrBase64(dataUrl);
                         }).catch((err) => {
-                            console.error('Failed to generate QR image:', err);
+                            // console.error('Failed to generate QR image:', err);
                             setError('Không thể tạo mã QR');
                         });
                     } catch (err) {
-                        console.error('Failed to generate QR image:', err);
+                        // console.error('Failed to generate QR image:', err);
                         setError('Không thể tạo mã QR');
                     }
                 }
 
                 setPollingActive(true);
             } catch (err) {
-                console.error('Create VietQR failed:', err);
-                setError(err.response?.data?.message || 'Lỗi tạo VietQR');
+                // console.error('Create VietQR failed:', err);
+                // setError(err.response?.data?.message || 'Lỗi tạo VietQR');
+                const message = err?.response?.data?.message || err.message || "Chỉ được phép tạo QR cho ngày hôm nay!";
+                showToast?.(message, "error");
                 setPollingActive(false);
+                onClose();
             } finally {
                 setLoading(false);
             }
@@ -121,7 +124,7 @@ export default function CreateVietQRModal({ billId, amount, onSuccess, onClose }
 
                     {error && (
                         <div className="vietqr-error">
-                            <p>❌ {error}</p>
+                            <p>{error}</p>
                             <button onClick={onClose}>Đóng</button>
                         </div>
                     )}
@@ -151,9 +154,9 @@ export default function CreateVietQRModal({ billId, amount, onSuccess, onClose }
                             <div className="vietqr-status-box">
                                 <p className="vietqr-status-label">Trạng thái:</p>
                                 <p className={`vietqr-status-value ${status.toLowerCase()}`}>
-                                    {status === 'PENDING' && '⏳ Chờ thanh toán'}
-                                    {status === 'SUCCESS' && '✅ Thanh toán thành công'}
-                                    {status === 'FAILED' && '❌ Thanh toán thất bại'}
+                                    {status === 'PENDING' && 'Chờ thanh toán'}
+                                    {status === 'SUCCESS' && 'Thanh toán thành công'}
+                                    {status === 'FAILED' && 'Thanh toán thất bại'}
                                 </p>
                             </div>
 
