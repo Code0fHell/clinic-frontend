@@ -47,6 +47,10 @@ import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/Diagnostic
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
 
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManageAccounts from "./pages/admin/ManageAccounts";
+import ManageStaff from "./pages/admin/ManageStaff";
+
 function App() {
     return (
         <AuthProvider>
@@ -152,6 +156,20 @@ function App() {
                         <Route
                             path="/owner/manage-schedule-staff"
                             element={<ManageScheduleStaff />}
+                        />
+
+                        {/* Admin routes */}
+                        <Route
+                            path="/admin"
+                            element={<AdminDashboard />}
+                        />
+                        <Route
+                            path="/admin/accounts"
+                            element={<ManageAccounts />}
+                        />
+                        <Route
+                            path="/admin/staff"
+                            element={<ManageStaff />}
                         />
                     </Route>
 
