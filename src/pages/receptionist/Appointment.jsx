@@ -5,6 +5,8 @@ import CreateVisitForm from "./components/CreateVisitForm";
 import { getTodayAppointments } from "../../api/appointment.api";
 import { createVisit } from "../../api/visit.api";
 import Toast from "../../components/modals/Toast";
+import { createPortal } from "react-dom";
+import { getAvailableDoctorToday } from "../../api/patient.api";
 
 export default function Appointment() {
     const getVietnamDateString = () => {
@@ -12,6 +14,7 @@ export default function Appointment() {
         const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
         return vnTime.toISOString().split("T")[0];
     };
+    const [availableDoctors, setAvailableDoctors] = useState([]);
     const [appointments, setAppointments] = useState([]);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -27,15 +30,27 @@ export default function Appointment() {
     const pageSizeOptions = [5, 10, 25, 50, 100];
     const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
 
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+    const [toast, setToast] = useState(null);
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 2000);
     };
+
+    // Dùng phục vụ nếu bác sĩ nghỉ
+    useEffect(() => {
+        const fetchDoctorAvailable = async () => {
+            try {
+                const data = await getAvailableDoctorToday();
+                setAvailableDoctors(data);
+            } catch (err) {
+                console.error("Lỗi khi lấy dữ liệu bác sĩ trống lịch:", err);
+            }
+        };
+        fetchDoctorAvailable();
+    }, []);
 
     const fetchAppointments = useCallback(async () => {
         try {
@@ -104,7 +119,7 @@ export default function Appointment() {
             if (!visitEntity?.id) {
                 throw new Error("Không xác định được ID lượt khám vừa tạo");
             }
-            showToast("Đã thêm vào thăm khám thành công");
+            showToast("Thêm thăm khám trong ngày thành công", "success");
             setSelectedAppointment(null);
             await fetchAppointments();
         } catch (err) {
@@ -146,15 +161,13 @@ export default function Appointment() {
     // --- Xử lý format ngày giờ ---
     const formatDateTime = (isoString) => {
         if (!isoString) return "—";
-        const date = new Date(isoString);
-        return date.toLocaleString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
+
+        const datePart = isoString.slice(0, 10).split("-").reverse().join("-");
+        const timePart = isoString.slice(11, 16);
+
+        return `${datePart} ${timePart}`;
     };
+
 
     /* ---------- RENDER ---------- */
     return (
@@ -356,7 +369,19 @@ export default function Appointment() {
 
                                                             {/* Bác sĩ */}
                                                             <td className="w-[160px] px-3 py-2 truncate border-r border-gray-200">
-                                                                {item.doctor?.name || "Không rõ"}
+                                                                {item.doctor?.name + " " || "Không rõ"}
+                                                                (<span
+                                                                    className={`text-sm italic ${item.doctor?.is_available === false
+                                                                        ? "text-red-500"
+                                                                        : "text-green-600"
+                                                                        }`}
+                                                                >
+                                                                    {item.doctor?.is_available === false
+                                                                        ? "Nghỉ phép"
+                                                                        : item.doctor?.is_available === true
+                                                                            ? "Đang làm việc"
+                                                                            : "Không xác định"}
+                                                                </span>)
                                                             </td>
 
                                                             {/* Thời gian */}
@@ -385,6 +410,7 @@ export default function Appointment() {
                                                                             patient_id: item.patient?.id,
                                                                             doctor_id: item.doctor?.id,
                                                                             appointment_id: item.id,
+                                                                            is_available: item.doctor?.is_available
                                                                         })
                                                                     }
                                                                     disabled={item.status !== "PENDING"}
@@ -423,7 +449,9 @@ export default function Appointment() {
                                 onSubmit={handleCreateVisit}
                                 onClose={() => setSelectedAppointment(null)}
                                 appointment={selectedAppointment} // <-- dữ liệu thực từ hàng được chọn
-                                availableDoctors={selectedAppointment.doctor ? [selectedAppointment.doctor] : []} // hoặc có thể bỏ nếu form không cần danh sách
+                                availableDoctors={selectedAppointment.doctor?.is_available === false
+                                    ? availableDoctors
+                                    : []} // hoặc có thể bỏ nếu form không cần danh sách
                                 isSubmitting={creatingVisit}
                             />
                         )}
@@ -494,13 +522,17 @@ export default function Appointment() {
                 </main>
             </div>
 
-            {toast.show && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast({ ...toast, show: false })}
-                />
-            )}
+            {/* Toast */}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />,
+                    document.body
+                )
+            }
         </div>
     );
 }

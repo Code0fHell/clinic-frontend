@@ -5,6 +5,7 @@ import Sidebar from "./components/SideBar";
 import { getAllBillToday, getDetailBill } from "../../api/bill.api";
 import PaymentMethodForm from "./components/PaymentMethodForm";
 import { paymentCash } from "../../api/payment.api";
+import Toast from "../../components/modals/Toast";
 
 export default function Invoice() {
     const getVietnamDateString = () => {
@@ -28,17 +29,12 @@ export default function Invoice() {
 
     const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
 
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+    const [toast, setToast] = useState(null);
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
         setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
+            setToast(null);
         }, 2000);
     };
 
@@ -342,8 +338,8 @@ export default function Invoice() {
                                                                             px-1 py-[2px] text-xs
                                                                             focus:outline-none focus:ring-1 focus:ring-blue-400">
                                                             <option value="all">Tất cả</option>
-                                                            <option value="pending">Chưa thanh toán</option>
-                                                            <option value="success">Đã thanh toán</option>
+                                                            <option value="PENDING">Chưa thanh toán</option>
+                                                            <option value="SUCCESS">Đã thanh toán</option>
                                                         </select>
                                                     </div>
                                                 </th>
@@ -544,12 +540,15 @@ export default function Invoice() {
                                     // Reload danh sách hóa đơn
                                     fetchDataInvoiceToday();
                                     showToast("Thanh toán thành công", "success");
+                                    setTimeout(() => {
+                                        setShowPaymentMethodForm(false);
+                                    }, 300);
                                 }
 
                                 setShowPaymentMethodForm(false);
                             } catch (error) {
                                 const message = error?.response?.data?.message || error.message || "Chỉ có thể thanh toán hóa đơn ngày hôm nay!";
-                                setShowPaymentMethodForm(false);
+                                // setShowPaymentMethodForm(false);
                                 showToast(message, "error");
                             }
                         }}
@@ -565,19 +564,16 @@ export default function Invoice() {
             }
 
             {/* Toast */}
-            {toast.show && (
-                <div
-                    className={`fixed top-20 right-5 px-4 py-3 rounded shadow-lg text-white z-[9999]
-            ${{
-                            success: "bg-green-500",
-                            error: "bg-red-500",
-                            warn: "bg-yellow-500",
-                        }[toast.type] || "bg-green-500"
-                        }`}
-                >
-                    {toast.message}
-                </div>
-            )}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />,
+                    document.body
+                )
+            }
         </div>
     );
 }
