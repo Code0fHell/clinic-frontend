@@ -5,12 +5,14 @@ import {
     Pill,
     Calendar,
     ClipboardCheck,
+    FileText,
 } from "lucide-react";
 
 export default function PharmacistSidebar() {
     const menuItems = [
         { icon: LayoutGrid, path: "/pharmacist/home", tooltip: "Trang chủ" },
         { icon: ClipboardCheck, path: "/pharmacist/prescriptions", tooltip: "Đơn thuốc" },
+        { icon: FileText, path: "/pharmacist/invoices", tooltip: "Hóa đơn thuốc" },
         { icon: Pill, path: "/pharmacist/medicines", tooltip: "Quản lý thuốc" },
         { icon: Calendar, path: "/pharmacist/schedule", tooltip: "Lịch làm việc" },
     ];
