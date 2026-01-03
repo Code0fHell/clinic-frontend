@@ -4,7 +4,7 @@ import useAuth from '../../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import Toast from '../../components/modals/Toast';
 
-const LoginPage = () => {
+const PatientLoginPage = () => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -35,42 +35,20 @@ const LoginPage = () => {
       const res = await loginApi(form);
       const { user, token } = res.data;
 
+      // Only allow PATIENT role
+      if (user.role !== 'PATIENT') {
+        setError('Tài khoản này không phải tài khoản bệnh nhân. Vui lòng đăng nhập tại trang dành cho nhân viên.');
+        return;
+      }
+
       localStorage.setItem("access_token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
       login(user, token);
       setToast({ message: "Đăng nhập thành công!", type: "success" });
 
-      // Điều hướng theo vai trò
       setTimeout(() => {
-        switch (user.role) {
-          case "PATIENT":
-            navigate("/");
-            break;
-          case "PHARMACIST":
-            navigate("/pharmacist/home");
-            break;
-          case "RECEPTIONIST":
-            navigate("/receptionist/home");
-            break;
-          case "DOCTOR":
-            if (user.staff.doctor_type === "CLINICAL") {
-              navigate("/doctor/dashboard");
-            } else if (user.staff.doctor_type === "DIAGNOSTIC") {
-              navigate("/diagnostic/dashboard");
-            } else if (user.staff.doctor_type === "LAB") {
-              navigate("/lab/dashboard");
-            }
-            break;
-          case "OWNER":
-            navigate("/owner/dashboard");
-            break;
-          case "ADMIN":
-            navigate("/admin");
-            break;
-          default:
-            navigate("/home");
-        }
+        navigate("/");
       }, 2000);
     } catch (err) {
       const backendMsg = err.response?.data?.message;
@@ -81,7 +59,6 @@ const LoginPage = () => {
       }
     }
   };
-
 
   return (
     <div className="flex min-h-screen bg-blue-600">
@@ -99,7 +76,7 @@ const LoginPage = () => {
       </div>
       <div className="flex flex-col justify-center w-1/2 bg-white rounded-l-3xl px-16">
         <h2 className="text-2xl font-bold mb-2">Đăng nhập</h2>
-        <p className="mb-6 text-gray-500">Đăng nhập để trải nghiệm thêm các dịch vụ của phòng khám</p>
+        <p className="mb-6 text-gray-500">Vui lòng đăng nhập để tiếp tục</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 font-medium">Tên đăng nhập</label>
@@ -147,4 +124,5 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default PatientLoginPage;
+

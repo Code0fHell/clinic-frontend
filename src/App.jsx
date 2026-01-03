@@ -6,8 +6,10 @@ import {
     Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import LoginPage from "./pages/auth/LoginPage";
+import PatientLoginPage from "./pages/auth/PatientLoginPage";
+import StaffLoginPage from "./pages/auth/StaffLoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import AppointmentSuccessPage from "./pages/appointment/AppointmentSuccessPage";
 import AppRouter from "./routes/AppRouter";
 import HomePage from "./pages/HomePage";
 import DoctorDashBoardPage from "./pages/doctor/DoctorDashBoardPage";
@@ -56,9 +58,21 @@ function App() {
         <AuthProvider>
             <Router>
                 <Routes>
+                    {/* Home page - accessible without login */}
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/home" element={<HomePage />} />
                     <Route path="/patient/home" element={<HomePage />} />
-                    <Route path="/login" element={<LoginPage />} />
+                    
+                    {/* Login pages - separated, no suggestions */}
+                    <Route path="/patient/login" element={<PatientLoginPage />} />
+                    <Route path="/staff/login" element={<StaffLoginPage />} />
+                    <Route path="/login" element={<PatientLoginPage />} />
+                    
+                    {/* Register */}
                     <Route path="/register" element={<RegisterPage />} />
+                    
+                    {/* Appointment success */}
+                    <Route path="/appointment/success" element={<AppointmentSuccessPage />} />
                     <Route
                         path="/patient/booking"
                         element={<MakeAppointmentPage />}
@@ -175,8 +189,8 @@ function App() {
 
                     {/* Main app routes */}
                     <Route path="/*" element={<AppRouter />} />
-                    {/* Redirect unknown routes */}
-                    <Route path="*" element={<Navigate to="/login" />} />
+                    {/* Redirect unknown routes to home */}
+                    <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </Router>
         </AuthProvider>
