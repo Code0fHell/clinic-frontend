@@ -27,7 +27,8 @@ import PharmacistMedicines from "./pages/pharmacist/Medicines";
 import PharmacistSchedule from "./pages/pharmacist/Schedule";
 import PharmacistPrescriptions from "./pages/pharmacist/Prescriptions";
 import PrivateRoute from "./routes/PrivateRoute";
-import ProfilePage from "./pages/profile/ProfilePage";
+import AccountInfoPage from "./pages/profile/AccountInfoPage";
+import MedicalRecordsPage from "./pages/profile/MedicalRecordsPage";
 import ServicePage from "./pages/services/ServicePage";
 import MedicinePage from "./pages/medicine/MedicinePage";
 import DoctorsPage from "./pages/doctors/DoctorsPage";
@@ -37,6 +38,7 @@ import LabDoctorDashBoardPage from './pages/doctor/lab/LabDoctorDashBoardPage';
 import LabIndicationListPage from './pages/doctor/lab/LabIndicationListPage';
 import LabTestResultPage from './pages/doctor/lab/LabTestResultPage';
 import LabCompletedResultsPage from './pages/doctor/lab/LabCompletedResultsPage';
+import LabTestResultListPage from './pages/doctor/lab/LabTestResultListPage';
 
 import DiagnosticDoctorDashBoardPage from './pages/doctor/diagnostic/DiagnosticDoctorDashBoardPage';
 import DiagnosticIndicationListPage from './pages/doctor/diagnostic/DiagnosticIndicationListPage';
@@ -45,6 +47,13 @@ import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/Diagnostic
 
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
+
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManageAccounts from "./pages/admin/ManageAccounts";
+import ManageStaff from "./pages/admin/ManageStaff";
+import WeeklyScheduleOverview from "./pages/admin/WeeklyScheduleOverview";
+import StaffWeeklyScheduleDetail from "./pages/admin/StaffWeeklyScheduleDetail";
+import CreateWorkSchedule from "./pages/admin/CreateWorkSchedule";
 
 function App() {
     return (
@@ -58,7 +67,9 @@ function App() {
                         path="/patient/booking"
                         element={<MakeAppointmentPage />}
                     />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/profile/account" element={<AccountInfoPage />} />
+                    <Route path="/profile/medical-records" element={<MedicalRecordsPage />} />
+                    <Route path="/profile" element={<AccountInfoPage />} />
                     <Route path="/services" element={<ServicePage />} />
                     <Route path="/medicines" element={<MedicinePage />} />
                     <Route path="/doctors" element={<DoctorsPage />} />
@@ -95,7 +106,7 @@ function App() {
                         <Route path='/lab/indications' element={<LabIndicationListPage />} />
                         <Route path='/lab/indication/:id/result' element={<LabTestResultPage />} />
                         <Route path='/lab/completed-results' element={<LabCompletedResultsPage />} />
-
+                        <Route path='/lab/results' element={<LabTestResultListPage/>}/>
                         {/* diagnostic doctor routes */}
                         <Route path='/diagnostic/dashboard' element={<DiagnosticDoctorDashBoardPage />} />
                         <Route path='/diagnostic/indications' element={<DiagnosticIndicationListPage />} />
@@ -151,6 +162,32 @@ function App() {
                         <Route
                             path="/owner/manage-schedule-staff"
                             element={<ManageScheduleStaff />}
+                        />
+
+                        {/* Admin routes */}
+                        <Route
+                            path="/admin"
+                            element={<AdminDashboard />}
+                        />
+                        <Route
+                            path="/admin/accounts"
+                            element={<ManageAccounts />}
+                        />
+                        <Route
+                            path="/admin/staff"
+                            element={<ManageStaff />}
+                        />
+                        <Route
+                            path="/admin/work-schedule"
+                            element={<WeeklyScheduleOverview />}
+                        />
+                        <Route
+                            path="/admin/work-schedule/staff-detail"
+                            element={<StaffWeeklyScheduleDetail />}
+                        />
+                        <Route
+                            path="/admin/work-schedule/create"
+                            element={<CreateWorkSchedule />}
                         />
                     </Route>
 

@@ -32,7 +32,7 @@ export const guestBookAppointment = async (dto) => {
 
 // DS lịch hôm nay, lọc, phân trang, tìm kiếm
 export const getTodayAppointments = async ({
-  date = "",        // yyyy-MM-dd (ISO 8601)
+  date = "",        // dd/MM/yyyy
   keyword = "",
   visitFilter = 'all',
   page = 1,
