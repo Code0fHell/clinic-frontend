@@ -9,6 +9,7 @@ const SideBar = () => {
     { id: "dashboard", label: "Dashboard", icon: "📊", path: "/admin" },
     { id: "accounts", label: "Tài khoản", icon: "👥", path: "/admin/accounts" },
     { id: "staff", label: "Nhân viên", icon: "👔", path: "/admin/staff" },
+    { id: "schedule", label: "Lịch làm việc", icon: "📅", path: "/admin/work-schedule" },
   ];
 
   const isActive = (path) => {
