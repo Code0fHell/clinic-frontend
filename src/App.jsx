@@ -51,6 +51,9 @@ import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageAccounts from "./pages/admin/ManageAccounts";
 import ManageStaff from "./pages/admin/ManageStaff";
+import WeeklyScheduleOverview from "./pages/admin/WeeklyScheduleOverview";
+import StaffWeeklyScheduleDetail from "./pages/admin/StaffWeeklyScheduleDetail";
+import CreateWorkSchedule from "./pages/admin/CreateWorkSchedule";
 
 function App() {
     return (
@@ -173,6 +176,18 @@ function App() {
                         <Route
                             path="/admin/staff"
                             element={<ManageStaff />}
+                        />
+                        <Route
+                            path="/admin/work-schedule"
+                            element={<WeeklyScheduleOverview />}
+                        />
+                        <Route
+                            path="/admin/work-schedule/staff-detail"
+                            element={<StaffWeeklyScheduleDetail />}
+                        />
+                        <Route
+                            path="/admin/work-schedule/create"
+                            element={<CreateWorkSchedule />}
                         />
                     </Route>
 
