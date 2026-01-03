@@ -6,7 +6,7 @@ import React, { useEffect } from "react";
  * @param {string} props.message - The message to display.
  * @param {function} props.onClose - Callback when toast closes.
  * @param {number} [props.duration=3500] - Duration in ms before auto-close.
- * @param {'success'|'error'|'info'} [props.type='success'] - Type of toast.
+ * @param {'success'|'error'|'info'|'warn'} [props.type='success'] - Type of toast.
  */
 const Toast = ({ message, onClose, duration = 3500, type = "success" }) => {
   useEffect(() => {
@@ -18,10 +18,11 @@ const Toast = ({ message, onClose, duration = 3500, type = "success" }) => {
   let bgColor = "bg-green-600";
   if (type === "error") bgColor = "bg-red-600";
   if (type === "info") bgColor = "bg-blue-600";
+  if (type === "warn") bgColor = "bg-yellow-500";
 
   return (
     <div
-      className={`fixed top-6 right-6 z-50 px-6 py-4 rounded shadow-lg text-white flex items-center gap-3 ${bgColor} animate-fade-in`}
+      className={`fixed top-18 right-6 z-50 px-6 py-4 rounded shadow-lg text-white flex items-center gap-3 ${bgColor} animate-fade-in`}
       role="alert"
     >
       <span>{message}</span>
