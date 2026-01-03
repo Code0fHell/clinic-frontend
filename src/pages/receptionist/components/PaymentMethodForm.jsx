@@ -1,20 +1,16 @@
 import React, { useState } from "react";
 import CreateVietQRModal from "../../../components/modals/CreateVietQRModal";
+import Toast from "../../../components/modals/Toast";
 
 export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
     const [method, setMethod] = useState("CASH");
     const [showVietQRModal, setShowVietQRModal] = useState(false);
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+    const [toast, setToast] = useState(null);
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
         setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
+            setToast(null);
         }, 2000);
     };
 
@@ -127,31 +123,26 @@ export default function PaymentMethodForm({ bill, onSubmit, onClose }) {
                         showToast={showToast}
                         onSuccess={(data) => {
                             // Gọi callback onSubmit sau khi thanh toán thành công
-                            showToast("Thanh toán thành công", "success");
+                            // showToast("Thanh toán thành công", "success");
                             const dto = {
                                 bill_id: bill.id,
                                 amount: Number(bill.total),
                             };
                             onSubmit?.({ dto, method: "BANK_TRANSFER" });
                             setShowVietQRModal(false);
-                            onClose?.();
+                            // onClose?.();
                         }}
                         onClose={() => setShowVietQRModal(false)}
                     />
                 )}
             </div>
-            {/* Toast */}
-            {toast.show && (
-                <div
-                    className={`fixed top-20 right-5 px-4 py-3 rounded shadow-lg text-white z-[9999] ${{
-                        success: "bg-green-500",
-                        error: "bg-red-500",
-                        warn: "bg-yellow-500",
-                    }[toast.type]
-                        }`}
-                >
-                    {toast.message}
-                </div>
+            {/* Toast Notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
             )}
         </div>
     );

@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
+import Toast from "../../../components/modals/Toast";
 
 export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 2000);
+    };
+
     const [formData, setFormData] = useState({
         patient_id: visit?.patient?.id || "",
         bill_type: "CLINICAL",
@@ -15,22 +25,29 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
         if (visit) {
             console.log("DEBUG: visit object:", visit);
 
+            // Xác định loại hóa đơn mặc định dựa trên dữ liệu có sẵn
+            let defaultBillType = "CLINICAL";
             let total = "";
-            // Lấy clinical_fee từ visit object (được set từ selectedVisit ở Parent)
-            const clinicalFee = visit.clinical_fee || "";
+            let indicationTicketId = "";
 
-            console.log("DEBUG: clinicalFee found:", clinicalFee);
-
-            if (clinicalFee) {
-                total = Number(clinicalFee);
+            // Kiểm tra có indication_ticket_id và indication_total_fee không
+            if (visit.indication_ticket_id && visit.indication_total_fee) {
+                defaultBillType = "SERVICE";
+                total = Number(visit.indication_total_fee);
+                indicationTicketId = visit.indication_ticket_id;
+            }
+            // Nếu không có indication, kiểm tra clinical_fee
+            else if (visit.clinical_fee) {
+                defaultBillType = "CLINICAL";
+                total = Number(visit.clinical_fee);
             }
 
             setFormData({
                 patient_id: visit.patient?.id || "",
-                bill_type: "CLINICAL",
+                bill_type: defaultBillType,
                 doctor_id: visit.doctor?.id || "",
-                medical_ticket_id: visit.medicalTicketId || visit.id || "",
-                indication_ticket_id: "",
+                medical_ticket_id: visit.medicalTicketId || "",
+                indication_ticket_id: indicationTicketId,
                 prescription_id: "",
                 total: total,
             });
@@ -50,12 +67,24 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
             updatedData[name] = value;
         }
 
-        // Nếu đổi bill_type sang CLINICAL, auto-fill total từ clinical_fee
-        if (name === "bill_type" && value === "CLINICAL") {
-            const clinicalFee = visit?.clinical_fee;
-
-            if (clinicalFee) {
-                updatedData.total = Number(clinicalFee);
+        // Nếu đổi bill_type, auto-fill total và các field liên quan
+        if (name === "bill_type") {
+            if (value === "CLINICAL") {
+                // Khi chọn CLINICAL, lấy từ clinical_fee
+                const clinicalFee = visit?.clinical_fee;
+                if (clinicalFee) {
+                    updatedData.total = Number(clinicalFee);
+                }
+                updatedData.medical_ticket_id = visit?.medicalTicketId || "";
+                updatedData.indication_ticket_id = "";
+            } else if (value === "SERVICE") {
+                // Khi chọn SERVICE, lấy từ indication_total_fee
+                const indicationTotalFee = visit?.indication_total_fee;
+                if (indicationTotalFee) {
+                    updatedData.total = Number(indicationTotalFee);
+                }
+                updatedData.indication_ticket_id = visit?.indication_ticket_id || "";
+                updatedData.medical_ticket_id = "";
             }
         }
 
@@ -69,9 +98,22 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
         // Convert total to number
         const totalAmount = formData.total ? Number(formData.total) : 0;
 
+        // Validation: kiểm tra indication_ticket_id khi là SERVICE
+        if (formData.bill_type === "SERVICE" && !formData.indication_ticket_id) {
+            showToast("Chưa có phiếu chỉ định dịch vụ. Vui lòng kiểm tra lại.", "error");
+            return;
+        }
+
+        // Validation: kiểm tra medical_ticket_id khi là CLINICAL
+        if (formData.bill_type === "CLINICAL" && !formData.medical_ticket_id) {
+            showToast("Chưa có phiếu khám lâm sàng. Vui lòng kiểm tra lại.", "error");
+            return;
+        }
+
         // Validation: kiểm tra total có dữ liệu
         if (!totalAmount || totalAmount <= 0) {
-            alert("Lỗi: Tổng tiền không được để trống hoặc phải > 0\n\nNếu loại hóa đơn là 'Lâm sàng', vui lòng kiểm tra phí khám bệnh trong phiếu khám.");
+            // const billTypeLabel = formData.bill_type === "CLINICAL" ? "Lâm sàng" : "Dịch vụ";
+            showToast("Tổng tiền không được để trống hoặc phải lớn hơn 0", "error");
             return;
         }
 
@@ -186,7 +228,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">
                             Tổng tiền <span className="text-red-500">*</span>
-                            {formData.bill_type === "CLINICAL" && formData.total && (
+                            {(formData.bill_type === "CLINICAL" || formData.bill_type === "SERVICE") && formData.total && (
                                 <span className="text-green-600 ml-2">✓</span>
                             )}
                         </label>
@@ -195,9 +237,15 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                             name="total"
                             value={formData.total}
                             onChange={handleChange}
-                            placeholder={formData.bill_type === "CLINICAL" ? "Tự động từ phí khám bệnh" : "Nhập tổng tiền"}
-                            disabled={formData.bill_type === "CLINICAL"}
-                            className={`w-full border rounded-lg px-4 py-2 ${formData.bill_type === "CLINICAL"
+                            placeholder={
+                                formData.bill_type === "CLINICAL"
+                                    ? "Tự động từ phí khám bệnh"
+                                    : formData.bill_type === "SERVICE"
+                                        ? "Tự động từ phí dịch vụ"
+                                        : "Nhập tổng tiền"
+                            }
+                            disabled={formData.bill_type === "CLINICAL" || formData.bill_type === "SERVICE"}
+                            className={`w-full border rounded-lg px-4 py-2 ${(formData.bill_type === "CLINICAL" || formData.bill_type === "SERVICE")
                                 ? "bg-gray-100 cursor-not-allowed border-gray-300"
                                 : "border-gray-300"
                                 }`}
@@ -209,6 +257,13 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                                 {formData.total
                                     ? `Phí khám bệnh: ${Number(formData.total).toLocaleString("vi-VN")} ₫`
                                     : "Lỗi: Phí khám bệnh không có dữ liệu"}
+                            </p>
+                        )}
+                        {formData.bill_type === "SERVICE" && (
+                            <p className="text-sm text-gray-500 mt-1">
+                                {formData.total
+                                    ? `Tổng phí dịch vụ: ${Number(formData.total).toLocaleString("vi-VN")} ₫`
+                                    : "Lỗi: Tổng phí dịch vụ không có dữ liệu"}
                             </p>
                         )}
                     </div>
@@ -231,6 +286,15 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
                     </div>
                 </form>
             </div>
+
+            {/* Toast Notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 }
