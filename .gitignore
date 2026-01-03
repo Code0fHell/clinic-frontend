@@ -26,4 +26,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Cypress artifacts
+cypress/screenshots/
+cypress/videos/
+
 
