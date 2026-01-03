@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { createMedicine, updateMedicine } from "../../../api/medicine.api";
+import { X, Upload, Image as ImageIcon } from "lucide-react";
+import { createMedicine, updateMedicine, uploadMedicineImage } from "../../../api/medicine.api";
 import Toast from "../../../components/modals/Toast";
+import axiosClient from "../../../api/axiosClient";
 
 export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
     const [formData, setFormData] = useState({
@@ -9,12 +10,17 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
         image: "",
         description: "",
         price: "",
+        import_price: "",
+        sale_price: "",
         category: "",
         unit: "",
         stock: "",
         manufacturer: "",
         expiry_date: "",
     });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
@@ -24,13 +30,19 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
                 name: medicine.name || "",
                 image: medicine.image || "",
                 description: medicine.description || "",
-                price: medicine.price || "",
+                price: medicine.price || medicine.sale_price || "",
+                import_price: medicine.import_price || "",
+                sale_price: medicine.sale_price || medicine.price || "",
                 category: medicine.category || "",
                 unit: medicine.unit || "",
                 stock: medicine.stock !== undefined ? medicine.stock : "",
                 manufacturer: medicine.manufacturer || "",
                 expiry_date: medicine.expiry_date ? new Date(medicine.expiry_date).toISOString().split('T')[0] : "",
             });
+            if (medicine.image) {
+                const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+                setImagePreview(baseURL + medicine.image);
+            }
         }
     }, [medicine]);
 
@@ -46,6 +58,52 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
         }));
     };
 
+    const handleImageChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.match(/^image\/(jpg|jpeg|png|webp)$/)) {
+            showToast("Chỉ chấp nhận file ảnh (jpg, jpeg, png, webp)", "error");
+            return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("Kích thước file không được vượt quá 5MB", "error");
+            return;
+        }
+
+        setImageFile(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload image
+        try {
+            setUploadingImage(true);
+            const res = await uploadMedicineImage(file);
+            if (res?.image_url) {
+                setFormData((prev) => ({
+                    ...prev,
+                    image: res.image_url,
+                }));
+                showToast("Upload ảnh thành công", "success");
+            }
+        } catch (err) {
+            console.error("Lỗi upload ảnh:", err);
+            showToast("Không thể upload ảnh", "error");
+            setImageFile(null);
+            setImagePreview(null);
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -54,8 +112,15 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
             showToast("Vui lòng nhập tên thuốc", "error");
             return;
         }
-        if (!formData.price || parseFloat(formData.price) < 0) {
-            showToast("Vui lòng nhập giá hợp lệ", "error");
+        
+        const salePrice = formData.sale_price || formData.price;
+        if (!salePrice || parseFloat(salePrice) < 0) {
+            showToast("Vui lòng nhập giá bán hợp lệ", "error");
+            return;
+        }
+
+        if (formData.import_price && parseFloat(formData.import_price) < 0) {
+            showToast("Giá nhập không được âm", "error");
             return;
         }
 
@@ -63,8 +128,9 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
             setLoading(true);
             const submitData = {
                 name: formData.name.trim(),
-                price: parseFloat(formData.price),
-                ...(formData.image && { image: formData.image.trim() }),
+                sale_price: parseFloat(salePrice),
+                ...(formData.import_price && { import_price: parseFloat(formData.import_price) }),
+                ...(formData.image && { image: formData.image }),
                 ...(formData.description && { description: formData.description.trim() }),
                 ...(formData.category && { category: formData.category.trim() }),
                 ...(formData.unit && { unit: formData.unit.trim() }),
@@ -91,7 +157,7 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-gray-800">
                         {medicine ? "Chỉnh sửa thuốc" : "Thêm thuốc mới"}
@@ -120,15 +186,84 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Image Upload */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Hình ảnh thuốc
+                        </label>
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                                    {uploadingImage ? (
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#008080]"></div>
+                                            <p className="mt-2 text-sm text-gray-500">Đang upload...</p>
+                                        </div>
+                                    ) : imagePreview ? (
+                                        <div className="relative w-full h-full">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setImagePreview(null);
+                                                    setImageFile(null);
+                                                    setFormData((prev) => ({ ...prev, image: "" }));
+                                                }}
+                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                                            <p className="mb-2 text-sm text-gray-500">
+                                                <span className="font-semibold">Click để upload</span> hoặc kéo thả
+                                            </p>
+                                            <p className="text-xs text-gray-500">PNG, JPG, WEBP (tối đa 5MB)</p>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onChange={handleImageChange}
+                                        disabled={uploadingImage}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Giá (VNĐ) <span className="text-red-500">*</span>
+                                Giá nhập (VNĐ)
                             </label>
                             <input
                                 type="number"
-                                name="price"
-                                value={formData.price}
+                                name="import_price"
+                                value={formData.import_price}
+                                onChange={handleChange}
+                                min="0"
+                                step="1000"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008080]"
+                                placeholder="0"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Giá bán (VNĐ) <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                name="sale_price"
+                                value={formData.sale_price}
                                 onChange={handleChange}
                                 required
                                 min="0"
@@ -200,20 +335,6 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            URL hình ảnh
-                        </label>
-                        <input
-                            type="text"
-                            name="image"
-                            value={formData.image}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008080]"
-                            placeholder="https://..."
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
                             Ngày hết hạn
                         </label>
                         <input
@@ -251,7 +372,7 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
                         <button
                             type="submit"
                             className="px-6 py-2 bg-[#008080] text-white rounded-lg hover:bg-teal-600 transition disabled:opacity-50"
-                            disabled={loading}
+                            disabled={loading || uploadingImage}
                         >
                             {loading ? "Đang lưu..." : medicine ? "Cập nhật" : "Thêm mới"}
                         </button>
@@ -269,5 +390,3 @@ export default function MedicineFormModal({ medicine, onClose, onSuccess }) {
         </div>
     );
 }
-
-
