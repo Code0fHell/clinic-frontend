@@ -39,15 +39,20 @@ export const getTodayAppointments = async ({
   limit = 10,
 } = {}) => {
   try {
-    const res = await axiosClient.get('/appointment/today', {
-      params: {
-        date,
-        visitFilter,
-        keyword,
-        page,
-        limit
-      },
-    });
+    // Chỉ gửi date nếu có giá trị (không phải empty string)
+    // Tránh lỗi validation khi backend nhận date = ""
+    const params = {
+      visitFilter,
+      keyword,
+      page,
+      limit
+    };
+
+    if (date && date.trim() !== "") {
+      params.date = date;
+    }
+
+    const res = await axiosClient.get('/appointment/today', { params });
 
     return res.data;
   } catch (err) {
