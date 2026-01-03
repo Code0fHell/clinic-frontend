@@ -5,12 +5,13 @@ import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import CreatePatientForm from "./components/CreatePatientForm";
 import CreateVisitForm from "./components/CreateVisitForm";
-import { getTodayVisit, createVisit, checkVisitToday } from "../../api/visit.api";
+import { createVisit } from "../../api/visit.api";
 import { getAllPatient, createPatient, getAvailableDoctorToday, exportPatientExcel } from "../../api/patient.api";
 import { PatientInfo } from "./components/PatientInfo";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 
 export default function Patient() {
+    const [openCreate, setOpenCreate] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showCreateVisitForm, setShowCreateVisitForm] = useState(false);
@@ -26,17 +27,12 @@ export default function Patient() {
     const [visitFilter, setVisitFilter] = useState("all");
     const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
 
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+    const [toast, setToast] = useState(null);
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
         setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
+            setToast(null);
         }, 2000);
     };
 
@@ -115,8 +111,7 @@ export default function Patient() {
             return;
         }
         const res = await createVisit(dataVisit);
-        // console.log("Dữ liệu visit được tạo:", res);
-        setDataVisit((prev) => [...prev, res]);
+        showToast("Thêm thăm khám trong ngày thành công", "success");
         setShowCreateVisitForm(false);
     };
 
@@ -281,7 +276,10 @@ export default function Patient() {
                             <h2 className="text-2xl font-bold text-gray-700 text-left">Danh sách bệnh nhân</h2>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => setShowCreateForm(true)}
+                                    onClick={() => {
+                                        setShowCreateForm(true);
+                                        setOpenCreate(true);
+                                    }}
                                     className="bg-teal-600 text-white px-4 py-2 rounded-lg text-[13px] font-medium hover:bg-teal-700 cursor-pointer flex items-center gap-2 whitespace-nowrap"
                                 >
                                     <i className="fas fa-plus"></i> Thêm bệnh nhân
@@ -398,13 +396,13 @@ export default function Patient() {
                                                 </button>
 
                                                 {/* Cập nhật */}
-                                                <button
+                                                {/* <button
                                                     title="Cập nhật"
                                                     className="p-2 rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-800 hover:cursor-pointer transition"
-                                                    onClick={() => setSelectedPatientForEdit(patient)}
+                                                    // onClick={() => setSelectedPatientForEdit(patient)}
                                                 >
                                                     <Pencil size={18} />
-                                                </button>
+                                                </button> */}
 
                                                 {/* Xóa */}
                                                 {/* <button
@@ -533,12 +531,12 @@ export default function Patient() {
                                 <div className="space-y-5">
                                     {/* <PatientInfo label="Mã bệnh nhân" value={selectedPatient.id} /> */}
                                     <PatientInfo label="Họ & tên" value={selectedPatient.patient_full_name} />
-                                    <PatientInfo label="Giới tính" value={selectedPatient.patient_gender} />
+                                    <PatientInfo label="Giới tính" value={selectedPatient.patient_gender === "NAM" ? "Nam" : "Nữ"} />
                                     <PatientInfo label="Ngày sinh" value={selectedPatient.patient_dob} />
                                     <PatientInfo label="Số điện thoại" value={selectedPatient.patient_phone} />
                                     <PatientInfo label="Địa chỉ" value={selectedPatient.patient_address} />
-                                    <PatientInfo label="Họ & tên bố / mẹ" value={selectedPatient.fatherORmother_name} />
-                                    <PatientInfo label="SĐT bố / mẹ" value={selectedPatient.mother_phone} />
+                                    <PatientInfo label="Họ & tên người thân" value={selectedPatient.fatherORmother_name} />
+                                    <PatientInfo label="SĐT người thân" value={selectedPatient.mother_phone} />
                                 </div>
 
                                 {/* Cột 2: Thông tin sức khỏe */}
@@ -560,7 +558,10 @@ export default function Patient() {
             {showCreateForm && createPortal(
                 <div
                     className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
-                    onClick={() => setShowCreateForm(false)}
+                    onClick={() => {
+                        setShowCreateForm(false);
+                        setOpenCreate(false);
+                    }}
                 >
                     {/* LỚP MỜ NỀN */}
                     <div className="absolute inset-0 bg-white/60 bg-opacity-50 transition-opacity"></div>
@@ -575,15 +576,20 @@ export default function Patient() {
                                 try {
                                     await createPatient(data);
                                     setShowCreateForm(false);
+                                    setOpenCreate(false);
                                     showToast("Thêm bệnh nhân thành công!", "success");
                                 } catch (error) {
                                     // console.error("Lỗi khi tạo bệnh nhân:", error);
                                     const message = error?.response?.data?.message || error.message || "Thêm bệnh nhân không thành công!";
                                     setShowCreateForm(false);
+                                    setOpenCreate(false);
                                     showToast(message, "error");
                                 }
                             }}
-                            onClose={() => setShowCreateForm(false)}
+                            onClose={() => {
+                                setShowCreateForm(false);
+                                setOpenCreate(false);
+                            }}
                         />
 
                     </div>
@@ -592,19 +598,16 @@ export default function Patient() {
             )}
 
             {/* Toast */}
-            {toast.show && (
-                <div
-                    className={`fixed top-20 right-5 px-4 py-3 rounded shadow-lg text-white z-[9999]
-            ${{
-                            success: "bg-green-500",
-                            error: "bg-red-500",
-                            warn: "bg-yellow-500",
-                        }[toast.type] || "bg-green-500"
-                        }`}
-                >
-                    {toast.message}
-                </div>
-            )}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />,
+                    document.body
+                )
+            }
 
         </div>
     );

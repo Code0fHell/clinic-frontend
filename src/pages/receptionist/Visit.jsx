@@ -8,6 +8,7 @@ import PaymentMethodForm from "./components/PaymentMethodForm";
 import { createMedicalTicket } from "../../api/medical-ticket.api";
 import { createBill } from "../../api/bill.api";
 import { paymentCash } from "../../api/payment.api";
+import Toast from "../../components/modals/Toast";
 
 export default function Visit() {
     const getVietnamDateString = () => {
@@ -35,17 +36,12 @@ export default function Visit() {
     const menuRefs = useRef([]);
     const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
 
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+    const [toast, setToast] = useState(null);
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
         setTimeout(() => {
-            setToast({ show: false, message: "", type: "success" });
+            setToast(null);
         }, 2000);
     };
 
@@ -151,17 +147,34 @@ export default function Visit() {
             name: visit.doctor.user.full_name,
         };
 
-        const medicalTicketId = visit.medicalTickets?.[0]?.id || null;
-        const clinical_fee = visit.medicalTickets?.[0]?.clinical_fee || null;
-        const creator = visit.created_by;
+        //    MEDICAL TICKET (MỚI NHẤT)
+        const latestMedicalTicket =
+            visit.medicalTickets?.length > 0
+                ? visit.medicalTickets[visit.medicalTickets.length - 1]
+                : null;
+
+        //    INDICATION (NẾU CÓ)
+        const latestIndication =
+            latestMedicalTicket?.indications?.length > 0
+                ? latestMedicalTicket.indications[
+                latestMedicalTicket.indications.length - 1
+                ]
+                : null;
 
         setSelectedVisit({
             id: visit.id,
             patient,
             doctor,
-            medicalTicketId,
-            clinical_fee,
-            creator
+            /* ===== TRẠNG THÁI ===== */
+            is_printed: visit.is_printed,
+            creator: visit.created_by,
+            /* ===== LÂM SÀNG ===== */
+            medicalTicketId: latestMedicalTicket?.id || null,
+            clinical_fee: latestMedicalTicket?.clinical_fee || null,
+            /* ===== DỊCH VỤ ===== */
+            indication_ticket_id: latestIndication?.id || null,
+            indication_total_fee: latestIndication?.total_fee || null,
+            indication_type: latestIndication?.indication_type || null,
         });
 
         setShowCreateInvoiceForm(true);
@@ -411,7 +424,6 @@ export default function Visit() {
             printWindow.document.close();
 
         } catch (error) {
-            // alert('Không thể tạo hoặc lấy Medical Ticket: ' + (error.response?.data?.message || error.message));
             const message =
                 error?.response?.data?.message || error.message ||
                 "Không thể tạo phiếu khám. Vui lòng thử lại!";
@@ -887,7 +899,7 @@ export default function Visit() {
                         {(() => {
                             const currentVisit = dataVisit[openMenuIndex];
                             const visitId = currentVisit?.id;
-                            const isPrinted = currentVisit?.is_printed;
+                            const isPrinted = currentVisit?.isPrinted;
                             return (
                                 <>
                                     <button
@@ -958,7 +970,7 @@ export default function Visit() {
                             const message =
                                 error?.response?.data?.message || error.message ||
                                 "Không thể tạo hóa đơn. Vui lòng thử lại!";
-                            setShowCreateInvoiceForm(false);
+                            // setShowCreateInvoiceForm(false);
                             showToast(message, "error");
                         }
                     }}
@@ -1002,19 +1014,16 @@ export default function Visit() {
             }
 
             {/* Toast */}
-            {toast.show && (
-                <div
-                    className={`fixed top-20 right-5 px-4 py-3 rounded shadow-lg text-white z-[9999]
-            ${{
-                            success: "bg-green-500",
-                            error: "bg-red-500",
-                            warn: "bg-yellow-500",
-                        }[toast.type] || "bg-green-500"
-                        }`}
-                >
-                    {toast.message}
-                </div>
-            )}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />,
+                    document.body
+                )
+            }
         </div>
     );
 }
