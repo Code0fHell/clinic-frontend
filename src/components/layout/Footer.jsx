@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer = () => (
   <footer className="bg-gray-900 text-gray-100 pt-12 pb-6 px-12">
@@ -16,11 +17,11 @@ const Footer = () => (
       <div>
         <h4 className="font-bold text-lg mb-2">Phím tắt</h4>
         <ul className="space-y-1">
-          <li><a href="/" className="hover:underline">Trang chủ</a></li>
-          <li><a href="/services" className="hover:underline">Dịch vụ</a></li>
-          <li><a href="/doctors" className="hover:underline">Bác sĩ</a></li>
-          <li><a href="/about" className="hover:underline">Về PMed</a></li>
-          <li><a href="/contact" className="hover:underline">Liên hệ</a></li>
+          <li><Link to="/" className="hover:underline">Trang chủ</Link></li>
+          <li><Link to="/services" className="hover:underline">Dịch vụ</Link></li>
+          <li><Link to="/doctors" className="hover:underline">Bác sĩ</Link></li>
+          <li><Link to="/about" className="hover:underline">Về PMed</Link></li>
+          <li><Link to="/contact" className="hover:underline">Liên hệ</Link></li>
         </ul>
       </div>
       <div>

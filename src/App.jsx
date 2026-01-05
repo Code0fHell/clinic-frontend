@@ -6,8 +6,10 @@ import {
     Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import LoginPage from "./pages/auth/LoginPage";
+import PatientLoginPage from "./pages/auth/PatientLoginPage";
+import StaffLoginPage from "./pages/auth/StaffLoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import AppointmentSuccessPage from "./pages/appointment/AppointmentSuccessPage";
 import AppRouter from "./routes/AppRouter";
 import HomePage from "./pages/HomePage";
 import DoctorDashBoardPage from "./pages/doctor/DoctorDashBoardPage";
@@ -28,7 +30,8 @@ import PharmacistSchedule from "./pages/pharmacist/Schedule";
 import PharmacistPrescriptions from "./pages/pharmacist/Prescriptions";
 import PharmacistPrescriptionInvoices from "./pages/pharmacist/PrescriptionInvoices";
 import PrivateRoute from "./routes/PrivateRoute";
-import ProfilePage from "./pages/profile/ProfilePage";
+import AccountInfoPage from "./pages/profile/AccountInfoPage";
+import MedicalRecordsPage from "./pages/profile/MedicalRecordsPage";
 import ServicePage from "./pages/services/ServicePage";
 import MedicinePage from "./pages/medicine/MedicinePage";
 import DoctorsPage from "./pages/doctors/DoctorsPage";
@@ -51,20 +54,37 @@ import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageAccounts from "./pages/admin/ManageAccounts";
 import ManageStaff from "./pages/admin/ManageStaff";
+import WeeklyScheduleOverview from "./pages/admin/WeeklyScheduleOverview";
+import StaffWeeklyScheduleDetail from "./pages/admin/StaffWeeklyScheduleDetail";
+import CreateWorkSchedule from "./pages/admin/CreateWorkSchedule";
 
 function App() {
     return (
         <AuthProvider>
             <Router>
                 <Routes>
+                    {/* Home page - accessible without login */}
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/home" element={<HomePage />} />
                     <Route path="/patient/home" element={<HomePage />} />
-                    <Route path="/login" element={<LoginPage />} />
+                    
+                    {/* Login pages - separated, no suggestions */}
+                    <Route path="/patient/login" element={<PatientLoginPage />} />
+                    <Route path="/staff/login" element={<StaffLoginPage />} />
+                    <Route path="/login" element={<PatientLoginPage />} />
+                    
+                    {/* Register */}
                     <Route path="/register" element={<RegisterPage />} />
+                    
+                    {/* Appointment success */}
+                    <Route path="/appointment/success" element={<AppointmentSuccessPage />} />
                     <Route
                         path="/patient/booking"
                         element={<MakeAppointmentPage />}
                     />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/profile/account" element={<AccountInfoPage />} />
+                    <Route path="/profile/medical-records" element={<MedicalRecordsPage />} />
+                    <Route path="/profile" element={<AccountInfoPage />} />
                     <Route path="/services" element={<ServicePage />} />
                     <Route path="/medicines" element={<MedicinePage />} />
                     <Route path="/doctors" element={<DoctorsPage />} />
@@ -176,12 +196,24 @@ function App() {
                             path="/admin/staff"
                             element={<ManageStaff />}
                         />
+                        <Route
+                            path="/admin/work-schedule"
+                            element={<WeeklyScheduleOverview />}
+                        />
+                        <Route
+                            path="/admin/work-schedule/staff-detail"
+                            element={<StaffWeeklyScheduleDetail />}
+                        />
+                        <Route
+                            path="/admin/work-schedule/create"
+                            element={<CreateWorkSchedule />}
+                        />
                     </Route>
 
                     {/* Main app routes */}
                     <Route path="/*" element={<AppRouter />} />
-                    {/* Redirect unknown routes */}
-                    <Route path="*" element={<Navigate to="/login" />} />
+                    {/* Redirect unknown routes to home */}
+                    <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </Router>
         </AuthProvider>

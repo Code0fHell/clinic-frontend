@@ -1,30 +1,85 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import { getAllBillToday, getDetailBill } from "../../api/bill.api";
 import PaymentMethodForm from "./components/PaymentMethodForm";
 import { paymentCash } from "../../api/payment.api";
+import Toast from "../../components/modals/Toast";
 
 export default function Invoice() {
+    const getVietnamDateString = () => {
+        const now = new Date();
+        const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        return vnTime.toISOString().split("T")[0];
+    };
     const [dataInvoiceToday, setDataInvoiceToday] = useState([]);
     const [showPaymentMethodForm, setShowPaymentMethodForm] = useState(false);
     const [dataSelectedInvoice, setDataSelectedInvoice] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [billType, setBillType] = useState("all");
+    const [paymentMethod, setPaymentMethod] = useState("all");
+    const [paymentStatus, setPaymentStatus] = useState("all");
+    const [totalPages, setTotalPages] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(6);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const dateInputRef = useRef(null);
-    const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().slice(0, 10)); // yyyy-mm-dd
+    const [dateFilter, setDateFilter] = useState(() => getVietnamDateString());
     const pageSizeOptions = [5, 10, 25, 50, 100];
 
+    const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
+
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 2000);
+    };
+
+    const fetchDataInvoiceToday = useCallback(async () => {
+        try {
+            const res = await getAllBillToday({
+                date: dateFilter,
+                keyword: searchTerm,
+                billType,
+                paymentMethod,
+                paymentStatus,
+                page: currentPage,
+                limit: itemsPerPage,
+            });
+
+            setDataInvoiceToday(res?.data || []);
+            setTotalPages(res?.pagination?.totalPages);
+        } catch (err) {
+            console.error("Lỗi khi lấy dữ liệu Invoice:", err);
+        }
+    }, [dateFilter, searchTerm, billType, paymentMethod, paymentStatus, currentPage, itemsPerPage]);
+
     useEffect(() => {
-        const fetchDataInvoiceToday = async () => {
-            const res = await getAllBillToday();
-            setDataInvoiceToday(res);
+        fetchDataInvoiceToday();
+    }, [dateFilter, billType, paymentMethod, paymentStatus, currentPage, itemsPerPage]);
+
+    useEffect(() => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
         }
 
-        fetchDataInvoiceToday();
-    }, [])
+        debounceRef.current = setTimeout(() => {
+            fetchDataInvoiceToday();
+        }, 500);
+
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     const openDatePicker = () => {
         if (!dateInputRef.current) return;
@@ -38,26 +93,10 @@ export default function Invoice() {
         }
     };
 
-
-    /* ---------- LOGIC ---------- */
-    const filteredData = useMemo(() => {
-        return dataInvoiceToday.filter((item) =>
-            item.patient_name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [searchTerm]);
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        return filteredData.slice(start, end);
-    }, [filteredData, currentPage, itemsPerPage]);
-
-    // console.log("paginatedData: " + JSON.stringify(paginatedData));
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
     const goToPage = (page) => {
-        if (page >= 1 && page <= totalPages) setCurrentPage(page);
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     const handleItemsPerPageChange = (value) => {
@@ -80,6 +119,46 @@ export default function Invoice() {
         }
         return pages;
     };
+
+    // Đóng modal khi nhấn ESC
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === "Escape") {
+                setShowPaymentMethodForm(false)
+            }
+        };
+
+        document.addEventListener("keydown", handleEsc, true);
+        return () => {
+            document.removeEventListener("keydown", handleEsc, true);
+        };
+    }, []);
+
+    // === KHÓA SCROLL + ÉP NỀN TRẮNG KHI MODAL MỞ ===
+    useEffect(() => {
+        if (setShowPaymentMethodForm) {
+            const scrollY = window.scrollY;
+
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.overflowY = 'scroll';
+            document.body.style.backgroundColor = '#f9fafb';
+        } else {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.overflowY = '';
+            document.body.style.backgroundColor = '';
+
+            if (scrollY) {
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+        }
+    }, [showPaymentMethodForm]);
 
     return (
         <div className="h-screen bg-gray-50 font-sans flex flex-col overflow-hidden">
@@ -126,7 +205,7 @@ export default function Invoice() {
                                     </span>
 
                                     <input
-                                        max={new Date().toISOString().slice(0, 10)}
+                                        max={getVietnamDateString()}
                                         ref={dateInputRef}
                                         type="date"
                                         value={dateFilter}
@@ -200,24 +279,69 @@ export default function Invoice() {
                                                     Ngày tạo
                                                 </th>
 
-                                                <th className="w-[100px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
-                            sticky top-0 z-10 border-b border-r border-gray-200">
-                                                    Loại hóa đơn
+                                                <th className="w-[180px] px-3 py-2 bg-gray-100 font-semibold text-gray-700
+               sticky top-0 z-10 border-b border-r border-gray-200">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="truncate max-w-[90px]">Loại hóa đơn</span>
+                                                        <select
+                                                            value={billType}
+                                                            onChange={(e) => {
+                                                                setBillType(e.target.value);
+                                                                // setCurrentPage(1);
+                                                            }}
+                                                            className="w-[90px] border border-gray-300 rounded-md 
+                                                                            px-1 py-[2px] text-xs
+                                                                            focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                                            <option value="all">Tất cả</option>
+                                                            <option value="clinical">Lâm sàng</option>
+                                                            <option value="service">Cận lâm sàng</option>
+                                                        </select>
+                                                    </div>
                                                 </th>
 
-                                                <th className="w-[160px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
-                            sticky top-0 z-10 border-b border-r border-gray-200">
-                                                    Hình thức thanh toán
+                                                <th className="w-[180px] px-3 py-2 bg-gray-100 font-semibold text-gray-700
+               sticky top-0 z-10 border-b border-r border-gray-200">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="truncate max-w-[120px]"> Kiểu thanh toán</span>
+                                                        <select
+                                                            value={paymentMethod}
+                                                            onChange={(e) => {
+                                                                setPaymentMethod(e.target.value);
+                                                                // setCurrentPage(1);
+                                                            }}
+                                                            className="w-[90px] border border-gray-300 rounded-md 
+                                                                            px-1 py-[2px] text-xs
+                                                                            focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                                            <option value="all">Tất cả</option>
+                                                            <option value="cash">Tiền mặt</option>
+                                                            <option value="bank_transfer">Tiền tài khoản</option>
+                                                        </select>
+                                                    </div>
                                                 </th>
 
-                                                <th className="w-[120px] px-3 py-2 text-right bg-gray-100 font-semibold text-gray-700
+                                                <th className="w-[90px] px-3 py-2 text-right bg-gray-100 font-semibold text-gray-700
                             sticky top-0 z-10 border-b border-r border-gray-200">
                                                     Tổng tiền
                                                 </th>
 
-                                                <th className="w-[180px] px-3 py-2 text-left bg-gray-100 font-semibold text-gray-700
-                            sticky top-0 z-10 border-gray-200">
-                                                    Thao tác
+                                                <th className="w-[100px] px-3 py-2 bg-gray-100 font-semibold text-gray-700
+               sticky top-0 z-10 border-b border-gray-200">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="truncate max-w-[90px]">Thao tác</span>
+                                                        <select
+                                                            value={paymentStatus}
+                                                            onChange={(e) => {
+                                                                setPaymentStatus(e.target.value);
+                                                                // setCurrentPage(1);
+                                                            }}
+                                                            className="w-[90px] border border-gray-300 rounded-md 
+                                                                            px-1 py-[2px] text-xs
+                                                                            focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                                            <option value="all">Tất cả</option>
+                                                            <option value="PENDING">Chưa thanh toán</option>
+                                                            <option value="SUCCESS">Đã thanh toán</option>
+                                                        </select>
+                                                    </div>
                                                 </th>
                                             </tr>
                                         </thead>
@@ -232,7 +356,7 @@ export default function Invoice() {
                                                     >
                                                         {/* STT */}
                                                         <td className="w-12 px-2 py-2 text-right border-r border-gray-200">
-                                                            {index + 1}
+                                                            {(currentPage - 1) * itemsPerPage + index + 1}
                                                         </td>
 
                                                         {/* Bệnh nhân */}
@@ -260,7 +384,7 @@ export default function Invoice() {
                                                             {item.bill_type === "CLINICAL"
                                                                 ? "Lâm sàng"
                                                                 : item.bill_type === "SERVICE"
-                                                                    ? "Dịch vụ"
+                                                                    ? "Cận lâm sàng"
                                                                     : item.bill_type === "MEDICINE"
                                                                         ? "Thuốc"
                                                                         : "Không xác định"}
@@ -268,7 +392,13 @@ export default function Invoice() {
 
                                                         {/* Hình thức thanh toán */}
                                                         <td className="w-[160px] px-3 py-2 truncate border-r border-gray-200">
-                                                            {item.payment_method === "CASH" ? "Tiền mặt" : "Chuyển khoản" || "—"}
+                                                            {item.payment_status?.includes("SUCCESS") ? (
+                                                                item.payment_method?.toUpperCase() === "CASH"
+                                                                    ? "Tiền mặt"
+                                                                    : item.payment_method?.toUpperCase() === "BANK_TRANSFER"
+                                                                        ? "Tiền tài khoản"
+                                                                        : "Không xác định"
+                                                            ) : "—"}
                                                         </td>
 
                                                         {/* Tổng tiền */}
@@ -285,7 +415,7 @@ export default function Invoice() {
                                                                 className={`w-full px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition
                                             ${item.payment_status?.includes('SUCCESS')
                                                                         ? 'bg-gray-400 text-white cursor-not-allowed'
-                                                                        : 'bg-[#008080] text-white hover:bg-teal-600'
+                                                                        : 'bg-[#008080] text-white hover:bg-teal-600 hover:cursor-pointer'
                                                                     }`}
                                                                 disabled={item.payment_status?.includes('SUCCESS')}
                                                                 onClick={async () => {
@@ -313,7 +443,7 @@ export default function Invoice() {
                                                         colSpan={9}
                                                         className="px-3 py-6 text-center text-gray-500 text-base"
                                                     >
-                                                        Không tìm thấy hóa đơn nào.
+                                                        Không có dữ liệu
                                                     </td>
                                                 </tr>
                                             )}
@@ -332,7 +462,7 @@ export default function Invoice() {
                                     <select
                                         value={itemsPerPage}
                                         onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                                        className="px-3 py-2 border border-gray-300 rounded-md text-[12px] font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#008080] cursor-pointer"
+                                        className="px-3 py-2 border border-gray-300 rounded-md text-[12px] font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#008080] hover:cursor-pointer"
                                     >
                                         {pageSizeOptions.map((size) => (
                                             <option key={size} value={size}>{size}</option>
@@ -348,7 +478,7 @@ export default function Invoice() {
                                         className={`flex items-center justify-center w-6 h-6 text-sm font-semibold transition rounded-md
                                             ${currentPage === 1
                                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer hover:text-[#008080]"}`}
+                                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 hover:cursor-pointer hover:text-[#008080]"}`}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -360,12 +490,12 @@ export default function Invoice() {
                                             key={idx}
                                             onClick={() => typeof page === "number" && goToPage(page)}
                                             disabled={page === "..."}
-                                            className={`w-6 h-6 text-sm font-semibold flex items-center justify-center transition rounded-md
+                                            className={`w-6 h-6 text-sm font-semibold flex items-center justify-center transition rounded-md hover:cursor-pointer
                                                 ${page === currentPage
                                                     ? "bg-[#008080] text-white border border-[#008080]"
                                                     : page === "..."
                                                         ? "text-gray-500 cursor-default"
-                                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer hover:text-[#008080]"}`}
+                                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-[#008080]"}`}
                                         >
                                             {page}
                                         </button>
@@ -377,7 +507,7 @@ export default function Invoice() {
                                         className={`flex items-center justify-center w-6 h-6 text-sm font-semibold transition rounded-md
                                             ${currentPage === totalPages
                                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer hover:text-[#008080]"}`}
+                                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 hover:cursor-pointer hover:text-[#008080]"}`}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -399,30 +529,47 @@ export default function Invoice() {
                             try {
                                 if (method === "CASH") {
                                     // Gọi API thanh toán tiền mặt
-                                    const res = await paymentCash(dto);
-                                    console.log("Thanh toán tiền mặt thành công!", res);
-
+                                    await paymentCash(dto);
                                     // Reload danh sách hóa đơn
-                                    const updated = await getAllBillToday();
-                                    setDataInvoiceToday(updated);
+                                    fetchDataInvoiceToday();
+                                    showToast("Thanh toán thành công", "success");
                                 }
                                 else if (method === "BANK_TRANSFER") {
                                     // VietQR thanh toán đã được xử lý trong CreateVietQRModal
                                     // và onSuccess callback sẽ gọi onSubmit khi thanh toán thành công
-                                    console.log("Thanh toán chuyển khoản VietQR thành công!");
-
                                     // Reload danh sách hóa đơn
-                                    const updated = await getAllBillToday();
-                                    setDataInvoiceToday(updated);
+                                    fetchDataInvoiceToday();
+                                    showToast("Thanh toán thành công", "success");
+                                    setTimeout(() => {
+                                        setShowPaymentMethodForm(false);
+                                    }, 300);
                                 }
 
                                 setShowPaymentMethodForm(false);
                             } catch (error) {
-                                console.error("Lỗi thanh toán:", error);
-                                alert("Lỗi thanh toán: " + (error.response?.data?.message || error.message));
+                                const message = error?.response?.data?.message || error.message || "Chỉ có thể thanh toán hóa đơn ngày hôm nay!";
+                                // setShowPaymentMethodForm(false);
+                                showToast(message, "error");
                             }
                         }}
-                        onClose={() => setShowPaymentMethodForm(false)}
+                        onClose={() => {
+                            setShowPaymentMethodForm(false);
+                            if (dateFilter === getVietnamDateString()) {
+                                showToast("Chưa thực hiện thanh toán!", "warn");
+                            }
+                        }}
+                    />,
+                    document.body
+                )
+            }
+
+            {/* Toast */}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
                     />,
                     document.body
                 )

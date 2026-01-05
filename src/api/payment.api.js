@@ -1,9 +1,9 @@
 import axiosClient from "./axiosClient";
 
 // Thanh toán bằng cash
-export const paymentCash = async (data) => {
+export const paymentCash = async (dto) => {
     try {
-        const res = await axiosClient.post("/payment/cash/create", data);
+        const res = await axiosClient.post("/payment/cash/create", dto);
         return res.data;
     } catch (err) {
         console.error("Lỗi khi thanh toán:", err.response?.data || err);

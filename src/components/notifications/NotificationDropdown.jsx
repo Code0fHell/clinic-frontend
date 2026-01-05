@@ -4,7 +4,9 @@ import dayjs from "dayjs";
 
 const NotificationDropdown = ({ isOpen, onClose, unreadCount, onMarkRead }) => {
   const [notifications, setNotifications] = useState([]);
+  const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("ALL"); // "ALL" or "UNREAD"
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -12,6 +14,15 @@ const NotificationDropdown = ({ isOpen, onClose, unreadCount, onMarkRead }) => {
       fetchNotifications();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Filter notifications based on selected filter
+    if (filter === "UNREAD") {
+      setFilteredNotifications(notifications.filter(n => !n.is_read));
+    } else {
+      setFilteredNotifications(notifications);
+    }
+  }, [notifications, filter]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -41,7 +52,8 @@ const NotificationDropdown = ({ isOpen, onClose, unreadCount, onMarkRead }) => {
     }
   };
 
-  const handleMarkAsRead = async (notificationId) => {
+  const handleMarkAsRead = async (notificationId, e) => {
+    e.stopPropagation();
     try {
       await markAsRead(notificationId);
       setNotifications((prev) =>
@@ -71,7 +83,23 @@ const NotificationDropdown = ({ isOpen, onClose, unreadCount, onMarkRead }) => {
     return dayjs(dateString).format("DD/MM/YYYY HH:mm");
   };
 
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "APPOINTMENT":
+        return "📅";
+      case "PRESCRIPTION":
+        return "💊";
+      case "BILL":
+        return "💰";
+      default:
+        return "🔔";
+    }
+  };
+
   if (!isOpen) return null;
+
+  const displayNotifications = filteredNotifications;
+  const unreadCountInFilter = displayNotifications.filter(n => !n.is_read).length;
 
   return (
     <div
@@ -103,6 +131,30 @@ const NotificationDropdown = ({ isOpen, onClose, unreadCount, onMarkRead }) => {
         )}
       </div>
 
+      {/* Filter Buttons */}
+      <div className="flex gap-2 p-3 border-b border-gray-200 bg-gray-50">
+        <button
+          onClick={() => setFilter("ALL")}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            filter === "ALL"
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+          }`}
+        >
+          Tất cả ({notifications.length})
+        </button>
+        <button
+          onClick={() => setFilter("UNREAD")}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            filter === "UNREAD"
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+          }`}
+        >
+          Chưa đọc ({notifications.filter(n => !n.is_read).length})
+        </button>
+      </div>
+
       {/* Notifications List */}
       <div className="overflow-y-auto flex-1 bg-gray-50">
         {loading ? (
@@ -125,11 +177,6 @@ const NotificationDropdown = ({ isOpen, onClose, unreadCount, onMarkRead }) => {
                 className={`p-4 hover:bg-white cursor-pointer transition-all duration-200 ${
                   !notification.is_read ? "bg-blue-50 border-l-4 border-l-[#008080]" : "bg-white"
                 }`}
-                onClick={() => {
-                  if (!notification.is_read) {
-                    handleMarkAsRead(notification.id);
-                  }
-                }}
               >
                 <div className="flex items-start gap-3">
                   <div className={`flex-shrink-0 w-3 h-3 rounded-full mt-2 ${

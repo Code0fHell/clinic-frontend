@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Select from "react-select";
 
 export default function CreateVisitForm({
     onSubmit,
@@ -9,6 +10,25 @@ export default function CreateVisitForm({
     // isSubmitting = false,
 }) {
     const isFromAppointment = !!appointment;
+    const [errors, setErrors] = useState({});
+    const validate = () => {
+        const newErrors = {};
+
+        if (!isFromAppointment) {
+            if (!formData.doctor_id || !formData.work_schedule_detail_id) {
+                newErrors.doctor_id = "Vui lòng chọn bác sĩ và khung giờ khám";
+            }
+        }
+
+        if (isFromAppointment && !doctorAvailableToday) {
+            if (!formData.doctor_id || !formData.work_schedule_detail_id) {
+                newErrors.doctor_id = "Bác sĩ nghỉ, vui lòng chọn bác sĩ khác";
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const [formData, setFormData] = useState({
         patient_id: "",
@@ -23,10 +43,14 @@ export default function CreateVisitForm({
 
     // --- Tự động fill dữ liệu ---
     useEffect(() => {
+        setErrors({});
         if (isFromAppointment) {
             setFormData({
                 patient_id: appointment.patient_id || appointment.patient?.id || "",
-                doctor_id: appointment.doctor_id || appointment.doctor?.id || "",
+                // doctor_id: appointment.doctor_id || appointment.doctor?.id || "",
+                doctor_id: appointment?.doctor?.is_available === true
+                    ? appointment.doctor_id || appointment.doctor?.id
+                    : "",
                 appointment_id: appointment.id || appointment.appointment_id || "",
                 work_schedule_detail_id: "",
                 visit_type: "APPOINTMENT",
@@ -48,35 +72,30 @@ export default function CreateVisitForm({
         }
     }, [appointment, patient, isFromAppointment]);
 
-    // Khi chọn bác sĩ
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    const doctorSlotOptions = useMemo(() => {
+        return availableDoctors.flatMap((item) =>
+            (item.freeSlots || []).map((slot) => ({
+                value: slot.id,
+                doctorId: item.doctor.id,
+                label: `${item.doctor.user.full_name} — ${item.doctor.department || "-"
+                    } — ${slot.slot_start.slice(11, 16)} - ${slot.slot_end.slice(11, 16)}`,
+            }))
+        );
+    }, [availableDoctors]);
 
-        // Nếu người dùng chọn work_schedule_detail_id
-        if (name === "work_schedule_detail_id") {
-            // Tìm ra bác sĩ tương ứng với slot được chọn
-            const foundDoctor = availableDoctors.find((d) =>
-                d.freeSlots.some((slot) => slot.id === value)
-            );
 
-            const doctorId = foundDoctor ? foundDoctor.doctor.id : "";
-
-            setFormData((prev) => ({
-                ...prev,
-                work_schedule_detail_id: value,
-                doctor_id: doctorId,
-            }));
-        } else {
-            setFormData((prev) => ({ ...prev, [name]: value }));
-        }
-    };
+    const doctorAvailableToday = useMemo(() => {
+        return isFromAppointment && appointment?.doctor?.is_available === true;
+    }, [appointment, isFromAppointment]);
 
     // Submit
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (!isFromAppointment && !formData.doctor_id) {
-            alert("Vui lòng chọn bác sĩ trước khi tạo thăm khám.");
+        if (!validate()) return;
+
+        if (isFromAppointment && !doctorAvailableToday && !formData.doctor_id) {
+            setErrors({ doctor_id: "Vui lòng chọn bác sĩ thay thế" });
             return;
         }
 
@@ -91,7 +110,7 @@ export default function CreateVisitForm({
             completed_at: formData.completed_at || null,
         };
 
-        console.log("Gửi dữ liệu tạo visit:", payload);
+        // console.log("Gửi dữ liệu tạo visit:", payload);
         onSubmit?.(payload);
     };
 
@@ -152,7 +171,9 @@ export default function CreateVisitForm({
                         <label className="block text-gray-700 font-medium mb-1">
                             Bác sĩ phụ trách <span className="text-red-500">*</span>
                         </label>
-                        {isFromAppointment ? (
+
+                        {/* 1.Bác sĩ có đi làm → KHÓA */}
+                        {isFromAppointment && doctorAvailableToday && (
                             <input
                                 type="text"
                                 value={
@@ -163,26 +184,53 @@ export default function CreateVisitForm({
                                 disabled
                                 className="w-full border border-gray-300 bg-gray-100 rounded-lg px-3 py-2"
                             />
-                        ) : (
-                            <select
-                                name="work_schedule_detail_id"
-                                value={formData.work_schedule_detail_id}
-                                onChange={handleChange}
-                                required
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#008080]"
-                            >
-                                <option value="">-- Chọn bác sĩ và khung giờ --</option>
-                                {availableDoctors.map((item) => (
-                                    item.freeSlots.map((slot) => (
-                                        <option key={slot.id} value={slot.id}>
-                                            {item.doctor.user.full_name} — {item.doctor.department || " - "} —
-                                            {slot.slot_start.replace('T', ' ').slice(11, 16)} - {slot.slot_end.replace('T', ' ').slice(11, 16)}
-                                        </option>
-                                    ))
-                                ))}
-                            </select>
+                        )}
+
+                        {/* 2.Bác sĩ nghỉ → CHO CHỌN NGƯỜI KHÁC */}
+                        {isFromAppointment && !doctorAvailableToday && (
+                            <Select
+                                options={doctorSlotOptions}
+                                placeholder="Bác sĩ nghỉ — chọn bác sĩ khác"
+                                menuPortalTarget={document.body}
+                                styles={{
+                                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                }}
+                                onChange={(opt) => {
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        doctor_id: opt.doctorId,
+                                        work_schedule_detail_id: opt.value,
+                                    }));
+                                    setErrors({});
+                                }}
+                            />
+                        )}
+
+                        {/* 3. Walk-in */}
+                        {!isFromAppointment && (
+                            <Select
+                                options={doctorSlotOptions}
+                                placeholder="-- Chọn bác sĩ và khung giờ --"
+                                menuPortalTarget={document.body}
+                                styles={{
+                                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                }}
+                                onChange={(opt) => {
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        doctor_id: opt.doctorId,
+                                        work_schedule_detail_id: opt.value,
+                                    }));
+                                    setErrors({});
+                                }}
+                            />
+                        )}
+
+                        {errors.doctor_id && (
+                            <p className="text-red-500 text-sm mt-1">{errors.doctor_id}</p>
                         )}
                     </div>
+
 
                     {/* Loại thăm khám */}
                     <div>
@@ -227,13 +275,6 @@ export default function CreateVisitForm({
                             className="bg-[#008080] text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition cursor-pointer"
                         >
                             Tạo thăm khám
-                            {/* disabled={isSubmitting}
-                            className={`px-6 py-3 rounded-lg font-semibold transition ${
-                                isSubmitting
-                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    : "bg-[#008080] text-white hover:bg-teal-700"
-                            }`} */}
-                            {/* {isSubmitting ? "Đang tạo..." : "Tạo thăm khám"} */}
                         </button>
                     </div>
                 </form>

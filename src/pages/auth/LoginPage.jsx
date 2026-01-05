@@ -45,7 +45,7 @@ const LoginPage = () => {
       setTimeout(() => {
         switch (user.role) {
           case "PATIENT":
-            navigate("/patient/home");
+            navigate("/");
             break;
           case "PHARMACIST":
             navigate("/pharmacist/home");

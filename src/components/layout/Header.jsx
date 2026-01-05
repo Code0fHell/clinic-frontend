@@ -16,7 +16,7 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/patient/login");
   };
 
   // Close dropdown when clicking outside
@@ -34,12 +34,12 @@ const Header = () => {
     : `https://ui-avatars.com/api/?name=${user?.full_name || user?.username}`;
   return (
     <header className="flex items-center justify-between px-12 py-4 bg-white shadow">
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/patient/home")}>
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
         <span className="text-2xl font-bold text-blue-600">PMED</span>
         <span className="text-2xl font-bold text-green-500">Clinic</span>
       </div>
       <nav className="flex-1 flex justify-center gap-12 text-lg font-medium text-gray-700">
-        <Link to="/patient/home" className="hover:text-blue-600 transition">Trang chủ</Link>
+        <Link to="/" className="hover:text-blue-600 transition">Trang chủ</Link>
         <Link to="/services" className="hover:text-blue-600 transition">Dịch vụ</Link>
         <Link to="/doctors" className="hover:text-blue-600 transition">Bác sĩ</Link>
         {isPatient ? (
@@ -111,30 +111,53 @@ const Header = () => {
               </svg>
             </button>
             {dropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={() => { setDropdown(false); navigate("/profile"); }}
+                  className="block w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                  onClick={() => { setDropdown(false); navigate("/profile/account"); }}
                 >
-                  Xem thông tin cá nhân
+                  <div className="flex items-center gap-2">
+                    <span>👤</span>
+                    <span className="font-medium">Thông tin tài khoản</span>
+                  </div>
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                  onClick={() => { setDropdown(false); navigate("/profile/medical-records"); }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>📋</span>
+                    <span className="font-medium">Hồ sơ bệnh án</span>
+                  </div>
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors text-red-600"
                   onClick={handleLogout}
                 >
-                  Đăng xuất
+                  <div className="flex items-center gap-2">
+                    <span>🚪</span>
+                    <span className="font-medium">Đăng xuất</span>
+                  </div>
                 </button>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <Link
-          to="/login"
-          className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-        >
-          Đăng nhập
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/patient/login"
+            className="text-gray-700 hover:text-blue-600 transition font-medium"
+          >
+            Đăng nhập
+          </Link>
+          <Link
+            to="/register"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
+            Đăng ký
+          </Link>
+        </div>
       )}
     </header>
   );

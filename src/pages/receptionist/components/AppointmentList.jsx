@@ -1,91 +1,298 @@
-import React, { useState } from "react";
-
-const appointments = [
-    { time: "8:00 Sáng", name: "Nguyễn Trường Sơn", phone: "0912345678", status: "Đã hoàn thành", color: "bg-green-100 text-green-700" },
-    { time: "9:00 Sáng", name: "Lê Gia Quang", phone: "0987654321", status: "Đang thực hiện", color: "bg-yellow-100 text-yellow-700" },
-    { time: "10:00 Sáng", name: "Bùi Trường Sơn", phone: "0901122334", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-    { time: "11:00 Sáng", name: "Nguyễn Đức Hoàng", phone: "0911223344", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-    { time: "13:00 Chiều", name: "Nguyễn Minh Châu", phone: "0922334455", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-    { time: "14:00 Chiều", name: "Nguyễn Thanh Ngân", phone: "0933445566", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-    { time: "15:00 Chiều", name: "Nguyễn Nhật Quỳnh Hương", phone: "0944556677", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-    { time: "16:00 Chiều", name: "Trần Văn A", phone: "0955667788", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-    { time: "17:00 Chiều", name: "Lê Thị B", phone: "0966778899", status: "Đã hoàn thành", color: "bg-green-100 text-green-700" },
-    { time: "18:00 Tối", name: "Phạm Văn C", phone: "0977889900", status: "Đang thực hiện", color: "bg-yellow-100 text-yellow-700" },
-    { time: "19:00 Tối", name: "Hoàng Thị D", phone: "0988990011", status: "Đang chờ", color: "bg-orange-100 text-orange-700" },
-];
-
-const statuses = ["Tất cả", "Đang chờ", "Đang thực hiện", "Đã hoàn thành"];
+import { useEffect, useRef, useState } from "react";
+import { cancelAppointmentDashboard, getAppointmentDashboard } from "../../../api/appointment.api";
+import Toast from "../../../components/modals/Toast";
+import ConfirmModal from "../../../components/modals/ConfirmModal";
+import { createPortal } from "react-dom";
 
 export default function AppointmentList() {
-    const [selectedStatus, setSelectedStatus] = useState("Đang chờ");
+    const [appointments, setAppointments] = useState([]);
+    const [keyword, setKeyword] = useState("");
+    const [appointmentFilter, setAppointmentFilter] = useState("PENDING");
 
-    const filteredAppointments =
-        selectedStatus === "Tất cả"
-            ? appointments
-            : appointments.filter((apt) => apt.status === selectedStatus);
+    const [cursor, setCursor] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    const [confirmModal, setConfirmModal] = useState({
+        open: false,
+        appointmentId: null,
+    });
+    const [cancelLoading, setCancelLoading] = useState(false);
+    const openCancelModal = (appointmentId) => {
+        setConfirmModal({
+            open: true,
+            appointmentId,
+        });
+    };
+    const closeCancelModal = () => {
+        setConfirmModal({
+            open: false,
+            appointmentId: null,
+        });
+    };
+
+
+    const [debouncedKeyword, setDebouncedKeyword] = useState(keyword);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedKeyword(keyword);
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timer);
+    }, [keyword]);
+
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 2000);
+    };
+
+    const listRef = useRef(null);
+
+    const fetchAppointments = async (reset = false) => {
+        if (loading || (!hasMore && !reset)) return;
+
+        setLoading(true);
+
+        const res = await getAppointmentDashboard({
+            keyword,
+            appointmentFilter,
+            cursor: reset ? null : cursor,
+            limit: 10,
+        });
+
+        setAppointments((prev) =>
+            reset ? res.data : [...prev, ...res.data]
+        );
+
+        setCursor(res.meta.nextCursor);
+        setHasMore(res.meta.hasMore);
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        setCursor(null);
+        setHasMore(true);
+        setAppointments([]);
+        fetchAppointments(true);
+    }, [appointmentFilter, debouncedKeyword]);
+
+    /* Cuộn quá khoảng cách sẽ gọi api*/
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            fetchAppointments();
+        }
+    };
+
+    const formatStatus = (status) => {
+        switch (status) {
+            case "PENDING":
+                return "Đang chờ"
+            case "CHECKED_IN":
+                return "Đã đến"
+            case "DOING":
+                return "Đang khám"
+            case "COMPLETED":
+                return "Đã khám xong"
+            case "CANCELLED":
+                return "Đã hủy"
+            default:
+                return "Không xác định"
+        }
+    }
+
+    const formatSession = (session) => {
+        switch (session) {
+            case "MORNING":
+                return "Sáng"
+            case "AFTERNOON":
+                return "Chiều"
+            default:
+                return "Không xác định"
+        }
+    }
+
+    const handleConfirmCancel = async () => {
+        if (!confirmModal.appointmentId) return;
+
+        try {
+            setCancelLoading(true);
+
+            const res = await cancelAppointmentDashboard(
+                confirmModal.appointmentId
+            );
+
+            showToast(res.message || "Hủy lịch hẹn thành công", "success");
+
+            closeCancelModal();
+
+            // Reload lại danh sách
+            setCursor(null);
+            setHasMore(true);
+            setAppointments([]);
+            fetchAppointments(true);
+        } catch (error) {
+            showToast("Hủy lịch hẹn thất bại", "error");
+        } finally {
+            setCancelLoading(false);
+        }
+    };
+
+
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm p-4 h-[490px] flex flex-col">
+        <div className="bg-white rounded-2xl shadow-sm p-4 h-[500px] flex flex-col">
             <div className="flex justify-between items-center mb-5">
-                <h3 className="text-xl font-bold text-gray-800">Lịch hẹn hôm nay</h3>
-                {/* <a href="#" className="text-sm font-semibold text-teal-600 hover:underline">
-                    Xem tất cả
-                </a> */}
+                <h3 className="text-xl font-bold text-gray-800">
+                    Lịch hẹn hôm nay
+                </h3>
             </div>
 
-            {/* Filter buttons */}
-            <div className="flex gap-2 mb-4 flex-wrap">
-                {statuses.map((status) => (
-                    <button
-                        key={status}
-                        onClick={() => setSelectedStatus(status)}
-                        className={`hover:cursor-pointer px-3 py-1 rounded-full text-sm font-medium transition-colors ${selectedStatus === status
-                            ? "bg-teal-600 text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                            }`}
+            {/* Search & Filter */}
+            <div className="flex items-center gap-3 mb-4">
+                {/* Search */}
+                <div className="relative flex-1">
+                    <input
+                        placeholder="Tìm kiếm theo tên hoặc số điện thoại"
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                        type="text"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm
+                                               focus:outline-none focus:ring-2 focus:ring-[#008080] transition
+                                               placeholder:text-gray-400"
+                    />
+                    <svg
+                        className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                     >
-                        {status}
-                    </button>
-                ))}
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
+                </div>
+
+                {/* Filter */}
+                <select
+                    value={appointmentFilter}
+                    onChange={(e) => setAppointmentFilter(e.target.value)}
+                    className="w-[160px] px-3 py-2.5 border border-gray-300 rounded-lg text-sm
+            focus:outline-none focus:ring-2 focus:ring-[#008080] bg-white"
+                >
+                    <option value="all">Tất cả</option>
+                    <option value="PENDING">Đang chờ</option>
+                    <option value="CHECKED_IN">Đã đến</option>
+                    <option value="DOING">Đang khám</option>
+                    <option value="COMPLETED">Hoàn thành</option>
+                    <option value="CANCELLED">Đã hủy</option>
+                </select>
             </div>
 
-            {/* Danh sách – 10 DÒNG, CUỘN KHI HOVER */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hidden hover:scrollbar-visible transition-all">
+            {/* List */}
+            <div
+                ref={listRef}
+                onScroll={handleScroll}
+                className="flex-1 min-h-0 overflow-y-auto scrollbar-hidden hover:scrollbar-visible transition-all"
+            >
                 <div className="space-y-4">
-                    {filteredAppointments.map((apt, index) => (
+                    {appointments.map((apt) => (
                         <div
-                            key={index}
+                            key={apt.id}
                             className="flex items-start justify-between py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors rounded-lg px-1 gap-3"
                         >
-                            {/* CỘT TRÁI: Thời gian + Tên (xuống dòng nếu dài) */}
+                            {/* Left */}
                             <div className="flex items-start space-x-4 flex-1 min-w-0">
-                                {/* Thời gian: cố định + số điện thoại */}
                                 <div className="min-w-32 flex-shrink-0">
-                                    <div className="text-base font-semibold text-gray-600">{apt.time}</div>
-                                    <div className="text-sm text-gray-500 italic mt-1">( SĐT: {apt.phone} )</div>
+                                    <div className="text-base font-semibold text-gray-600">
+                                        {new Date(apt.scheduled_date).toLocaleTimeString("vi-VN", {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })} - {formatSession(apt.session)}
+                                    </div>
+                                    <div className="text-sm text-gray-500 italic mt-1">
+                                        ( SĐT: {apt.patient.phone} )
+                                    </div>
                                 </div>
 
-                                {/* Tên: XUỐNG DÒNG nếu dài */}
-                                <div className="text-lg font-semibold text-gray-600 break-words line-clamp-2">
-                                    {apt.name}
+                                <div className="text-lg font-semibold text-gray-700 break-words">
+                                    {apt.patient.name}
                                 </div>
                             </div>
 
-                            {/* Nút trạng thái: cố định bên phải */}
+                            {/* Status */}
                             <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${apt.color} shadow-sm`}>
-                                    {apt.status}
+                                <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-teal-100 text-teal-700">
+                                    {formatStatus(apt.status)}
                                 </span>
-                                {apt.status === "Đang chờ" && (
-                                    <button className="px-4 py-1.5 rounded-full text-sm font-bold bg-red-100 text-red-700 shadow-sm hover:bg-red-200 transition-colors">
+                                {apt.status === "PENDING" && (
+                                    <button
+                                        onClick={() => openCancelModal(apt.id)}
+                                        className="px-4 py-1.5 rounded-full text-sm font-bold 
+                   bg-red-100 text-red-700 shadow-sm 
+                   hover:bg-red-200 cursor-pointer transition-colors"
+                                    >
                                         Hủy
                                     </button>
                                 )}
                             </div>
                         </div>
                     ))}
+
+                    {loading && (
+                        <div className="text-center text-gray-400 py-2 text-sm">
+                            Đang tải...
+                        </div>
+                    )}
+
+                    {!hasMore && appointments.length > 0 && (
+                        <div className="text-center text-gray-400 py-2 text-sm">
+                            Đã hết dữ liệu
+                        </div>
+                    )}
+
+                    {appointments.length === 0 && (
+                        <div className="text-center text-gray-400 py-2 text-sm">
+                            Không có dữ liệu
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Toast */}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />,
+                    document.body
+                )
+            }
+            {/* Confirm cancel modal */}
+            {confirmModal.open &&
+                createPortal(
+                    <ConfirmModal
+                        open={confirmModal.open}
+                        title="Xác nhận hủy lịch hẹn"
+                        message="Bạn có chắc chắn muốn hủy lịch hẹn này không?"
+                        confirmText="Hủy lịch"
+                        cancelText="Quay lại"
+                        loading={cancelLoading}
+                        onCancel={closeCancelModal}
+                        onConfirm={handleConfirmCancel}
+                    />,
+                    document.body
+                )
+            }
         </div>
     );
 }

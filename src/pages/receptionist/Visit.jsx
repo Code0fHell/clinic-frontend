@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
@@ -8,8 +8,14 @@ import PaymentMethodForm from "./components/PaymentMethodForm";
 import { createMedicalTicket } from "../../api/medical-ticket.api";
 import { createBill } from "../../api/bill.api";
 import { paymentCash } from "../../api/payment.api";
+import Toast from "../../components/modals/Toast";
 
 export default function Visit() {
+    const getVietnamDateString = () => {
+        const now = new Date();
+        const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        return vnTime.toISOString().split("T")[0];
+    };
     const [openMenuIndex, setOpenMenuIndex] = useState(null);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 }); // <-- THÊM STATE VỊ TRÍ
     const [searchVisit, setSearchVisit] = useState("");
@@ -20,37 +26,29 @@ export default function Visit() {
     const [createdInvoice, setCreatedInvoice] = useState(null);
     const [dataVisit, setDataVisit] = useState([]);
     const dateInputRef = useRef(null);
-    const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().slice(0, 10)); // yyyy-mm-dd
+    const [visitFilter, setVisitFilter] = useState("all");
+    const [appointmentType, setAppointmentType] = useState("all");
+    const [totalPages, setTotalPages] = useState(1);
+    const [dateFilter, setDateFilter] = useState(() => getVietnamDateString()); // yyyy-mm-dd
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(6);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const pageSizeOptions = [5, 10, 25, 50, 100];
     const menuRefs = useRef([]);
+    const debounceRef = useRef(null); // Tránh gọi API liên tục khi tìm kiếm
 
-    // Phân trang, lọc
-    const filteredData = useMemo(() => {
-        return dataVisit.filter((item) => {
-            const name = (item.patient?.patient_full_name || "Không có tên").toLowerCase();
-            const nameMatch = name.includes(searchVisit.toLowerCase());
+    const [toast, setToast] = useState(null);
 
-            if (!dateFilter) return nameMatch;
-
-            const itemDate = item.scheduled_date ? new Date(item.scheduled_date).toISOString().slice(0, 10) : null;
-            const dateMatch = itemDate === dateFilter;
-
-            return nameMatch && dateMatch;
-        });
-    }, [dataVisit, searchVisit, dateFilter]);
-
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        return filteredData.slice(start, end);
-    }, [filteredData, currentPage, itemsPerPage]);
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 2000);
+    };
 
     const goToPage = (page) => {
-        if (page >= 1 && page <= totalPages) setCurrentPage(page);
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     const handleItemsPerPageChange = (value) => {
@@ -74,18 +72,47 @@ export default function Visit() {
         return pages;
     };
 
+    const fetchDataVisit = useCallback(async () => {
+        try {
+            const res = await getTodayVisit({
+                date: dateFilter,
+                keyword: searchVisit,
+                visitFilter,
+                appointmentType,
+                page: currentPage,
+                limit: itemsPerPage,
+            });
+
+            setDataVisit(res.data || []);
+            setTotalPages(res.pagination?.totalPages);
+        } catch (err) {
+            console.error("Lỗi khi lấy dữ liệu Visit:", err);
+        }
+    }, [dateFilter, searchVisit, visitFilter, appointmentType, currentPage, itemsPerPage]);
+
     useEffect(() => {
-        const fetchDataVisit = async () => {
-            try {
-                const data = await getTodayVisit();
-                setDataVisit(data);
-            } catch (err) {
-                console.error("Lỗi khi lấy dữ liệu Visit:", err);
+        fetchDataVisit();
+    }, [dateFilter, visitFilter, appointmentType, currentPage, itemsPerPage]);
+
+    useEffect(() => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            fetchDataVisit();
+        }, 500);
+
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
             }
         };
+    }, [searchVisit]);
 
-        fetchDataVisit();
-    }, []);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchVisit]);
 
     const openDatePicker = () => {
         if (!dateInputRef.current) return;
@@ -120,19 +147,35 @@ export default function Visit() {
             name: visit.doctor.user.full_name,
         };
 
-        const medicalTicketId = visit.medicalTickets?.[0]?.id || null;
-        const clinical_fee = visit.medicalTickets?.[0]?.clinical_fee || null;
-        const creator = visit.created_by;
+        //    MEDICAL TICKET (MỚI NHẤT)
+        const latestMedicalTicket =
+            visit.medicalTickets?.length > 0
+                ? visit.medicalTickets[visit.medicalTickets.length - 1]
+                : null;
+
+        //    INDICATION (NẾU CÓ)
+        const latestIndication =
+            latestMedicalTicket?.indications?.length > 0
+                ? latestMedicalTicket.indications[
+                latestMedicalTicket.indications.length - 1
+                ]
+                : null;
 
         setSelectedVisit({
             id: visit.id,
             patient,
             doctor,
-            medicalTicketId,
-            clinical_fee,
-            creator
+            /* ===== TRẠNG THÁI ===== */
+            is_printed: visit.is_printed,
+            creator: visit.created_by,
+            /* ===== LÂM SÀNG ===== */
+            medicalTicketId: latestMedicalTicket?.id || null,
+            clinical_fee: latestMedicalTicket?.clinical_fee || null,
+            /* ===== DỊCH VỤ ===== */
+            indication_ticket_id: latestIndication?.id || null,
+            indication_total_fee: latestIndication?.total_fee || null,
+            indication_type: latestIndication?.indication_type || null,
         });
-
 
         setShowCreateInvoiceForm(true);
     };
@@ -381,7 +424,11 @@ export default function Visit() {
             printWindow.document.close();
 
         } catch (error) {
-            alert('Không thể tạo hoặc lấy Medical Ticket: ' + (error.response?.data?.message || error.message));
+            const message =
+                error?.response?.data?.message || error.message ||
+                "Không thể tạo phiếu khám. Vui lòng thử lại!";
+
+            showToast(message, "error");
         }
     };
 
@@ -413,13 +460,15 @@ export default function Visit() {
         const handleEsc = (e) => {
             if (e.key === "Escape") {
                 setOpenMenuIndex(null);
-                setShowCreateForm(false);
                 setShowCreateVisitForm(false);
                 setShowCreateInvoiceForm(false);
             }
         };
-        window.addEventListener("keydown", handleEsc);
-        return () => window.removeEventListener("keydown", handleEsc);
+
+        document.addEventListener("keydown", handleEsc, true);
+        return () => {
+            document.removeEventListener("keydown", handleEsc, true);
+        };
     }, []);
 
     // === KHÓA SCROLL + ÉP NỀN TRẮNG KHI MODAL MỞ ===
@@ -462,17 +511,44 @@ export default function Visit() {
 
     // Số căn phải, chữ căn trái
     const headers = [
-        { label: "STT", align: "right" },
-        { label: "Bệnh nhân", align: "left" },
-        { label: "Giới tính", align: "left" },
-        { label: "Số ĐT", align: "left" },
-        { label: "Địa chỉ", align: "left" },
-        { label: "Ngày sinh", align: "left" },
-        { label: "Trạng thái", align: "left" },
-        { label: "Thao tác", align: "left" },
+        { label: "STT", width: "20px", align: "right" },
+        { label: "Bệnh nhân", width: "180px" },
+        { label: "Giới tính", width: "70px" },
+        { label: "SĐT", width: "130px" },
+        { label: "Địa chỉ", width: "180px" },
+        { label: "Ngày sinh", width: "150px" },
+        { label: "Hình thức", width: "100px", hasAppointment: true },
+        { label: "Trạng thái", width: "100px", hasFilter: true },
+        { label: "Thao tác", width: "90px" },
     ];
 
-    const renderTable = (data, headers, rowRenderer, showScroll = true) => {
+    //render visit_status
+    const renderStatus = (status) => {
+        switch (status) {
+            case "CHECKED_IN":
+                return "Đã xác nhận đến khám";
+            case "COMPLETED":
+                return "Đã khám xong";
+            case "CANCELLED":
+                return "Đã hủy";
+            default:
+                return "Không xác định";
+        }
+    };
+
+    //render xem đặt lịch hay không đặt lịch
+    const renderHasAppointment = (hasAppointment) => {
+        switch (hasAppointment) {
+            case true:
+                return "Đã đặt lịch";
+            case false:
+                return "Không đặt lịch";
+            default:
+                return "Không xác định";
+        }
+    };
+
+    const renderTable = (data, headers, rowRender, showScroll = true) => {
         const shouldScroll = showScroll && data.length > 5;
 
         return (
@@ -483,12 +559,13 @@ export default function Visit() {
                             }`}
                     >
                         <table className="min-w-full table-fixed text-sm border-collapse">
-                            {/* ==== THEAD ==== */}
+                            {/* ===== THEAD ===== */}
                             <thead>
                                 <tr>
                                     {headers.map((header, i) => (
                                         <th
                                             key={i}
+                                            style={{ width: header.width }}
                                             className={`
                                             px-3 py-2
                                             ${header.align === "right" ? "text-right" : "text-left"}
@@ -498,13 +575,42 @@ export default function Visit() {
                                             whitespace-nowrap
                                         `}
                                         >
-                                            {header.label}
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span>{header.label}</span>
+
+                                                {header.hasFilter && (
+                                                    <select
+                                                        value={visitFilter}
+                                                        onChange={(e) => setVisitFilter(e.target.value)}
+                                                        className="border border-gray-300 rounded-md px-2 py-1 text-xs
+                                                    focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                    >
+                                                        <option value="all">Tất cả</option>
+                                                        <option value="checked_in">Đã đến thăm khám</option>
+                                                        <option value="completed">Đã khám xong</option>
+                                                        <option value="cancelled">Đã hủy khám</option>
+                                                    </select>
+                                                )}
+
+                                                {header.hasAppointment && (
+                                                    <select
+                                                        value={appointmentType}
+                                                        onChange={(e) => setAppointmentType(e.target.value)}
+                                                        className="border border-gray-300 rounded-md px-2 py-1 text-xs
+                focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                    >
+                                                        <option value="all">Tất cả</option>
+                                                        <option value="true">Đã đặt lịch</option>
+                                                        <option value="false">Không đặt lịch</option>
+                                                    </select>
+                                                )}
+                                            </div>
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
 
-                            {/* ==== TBODY ==== */}
+                            {/* ===== TBODY ===== */}
                             <tbody className="text-gray-700 divide-y divide-gray-200">
                                 {data.length > 0 ? (
                                     data.map((item, index) => (
@@ -512,7 +618,7 @@ export default function Visit() {
                                             key={index}
                                             className="text-[15px] hover:bg-gray-50 transition-colors"
                                         >
-                                            {rowRenderer(item, index)}
+                                            {rowRender(item, index)}
                                         </tr>
                                     ))
                                 ) : (
@@ -532,6 +638,7 @@ export default function Visit() {
             </div>
         );
     };
+
 
 
     return (
@@ -579,7 +686,7 @@ export default function Visit() {
                                     </span>
 
                                     <input
-                                        max={new Date().toISOString().slice(0, 10)}
+                                        max={getVietnamDateString()}
                                         ref={dateInputRef}
                                         type="date"
                                         value={dateFilter}
@@ -624,29 +731,34 @@ export default function Visit() {
                             headers,
                             (item, index) => (
                                 <>
-                                    <td className="px-3 py-2 text-right align-middle truncate border-r border-gray-200">
+                                    {/* STT */}
+                                    <td className="w-[20px] px-2 py-2 text-right border-r border-gray-200">
                                         {item.queue_number}
                                     </td>
 
-                                    <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">
+                                    {/* Bệnh nhân */}
+                                    <td className="w-[180px] px-3 py-2 truncate border-r border-gray-200">
                                         {item.patient?.patient_full_name || "Không rõ"}
                                     </td>
 
-                                    <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">
+                                    {/* Giới tính */}
+                                    <td className="w-[70px] px-3 py-2 border-r border-gray-200">
                                         {item.patient?.patient_gender === "NU" ? "Nữ" : "Nam"}
                                     </td>
 
-                                    <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">
+                                    {/* Số điện thoại */}
+                                    <td className="w-[130px] px-3 py-2 border-r border-gray-200">
                                         {item.patient?.patient_phone || "Không rõ"}
                                     </td>
 
-                                    <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">
+                                    {/* Địa chỉ */}
+                                    <td className="w-[180px] px-3 py-2 truncate border-r border-gray-200">
                                         {item.patient?.patient_address || "Không rõ"}
                                     </td>
 
-                                    <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">
+                                    {/* Ngày sinh */}
+                                    <td className="w-[150px] px-3 py-2 border-r border-gray-200">
                                         {formatDate(item.patient?.patient_dob) || "Không rõ"}
-
                                         {item.patient?.patient_dob && (
                                             <span className="ml-1 text-gray-500 text-[12px] italic">
                                                 ({calculateAge(item.patient?.patient_dob)} tuổi)
@@ -654,23 +766,28 @@ export default function Visit() {
                                         )}
                                     </td>
 
-                                    <td className="px-3 py-2 text-left align-middle truncate border-r border-gray-200">
-                                        <span className="px-2 py-1 rounded-full text-[15px]">
-                                            {item.visit_status === "CHECKED_IN"
-                                                ? "Đã xác nhận đến khám"
-                                                : "Chưa xác định"}
+                                    {/* Hình thức */}
+                                    <td className="w-[100px] px-3 py-2 border-r border-gray-200">
+                                        <span className="px-2 py-1 rounded-full text-sm">
+                                            {renderHasAppointment(item.hasAppointment)}
                                         </span>
                                     </td>
 
-                                    {/* ACTION BUTTON */}
+                                    {/* Trạng thái */}
+                                    <td className="w-[100px] px-3 py-2 border-r border-gray-200">
+                                        <span className="px-2 py-1 rounded-full text-sm">
+                                            {renderStatus(item.visit_status)}
+                                        </span>
+                                    </td>
+
+                                    {/* Hành động */}
                                     <td
-                                        className="px-3 py-2 text-left align-middle truncate border-r border-gray-200 relative"
+                                        className="w-[90px] px-3 py-2 text-center border-r border-gray-200 relative"
                                         ref={(el) => (menuRefs.current[index] = el)}
                                     >
                                         <button
                                             onClick={(e) => handleOpenMenu(index, e)}
-                                            className="p-2 rounded-full hover:bg-gray-100 text-gray-600 cursor-pointer"
-                                            title="Hành động"
+                                            className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -771,7 +888,7 @@ export default function Visit() {
                     }}
                 >
                     <div
-                        className="dropdown-menu fixed bg-white border border-gray-200 rounded-xl shadow-2xl py-2 w-48"
+                        className="dropdown-menu fixed bg-white border border-gray-200 rounded-lg shadow-xl py-1 w-40 text-sm"
                         style={{
                             top: `${menuPosition.top}px`,
                             left: `${menuPosition.left}px`,
@@ -780,42 +897,42 @@ export default function Visit() {
                     >
                         {/** Lấy visitId của bệnh nhân đang mở menu */}
                         {(() => {
-                            const visitId = dataVisit[openMenuIndex]?.id; // cần có visitId trong mảng visitPatients
+                            const currentVisit = dataVisit[openMenuIndex];
+                            const visitId = currentVisit?.id;
+                            const isPrinted = currentVisit?.isPrinted;
                             return (
                                 <>
                                     <button
-                                        className="ml-2 flex items-center gap-3 px-4 py-2 w-full text-left text-gray-700 hover:bg-gray-50 text-sm cursor-pointer"
+                                        className="ml-1 flex items-center gap-2 px-3 py-1.5 w-full text-left text-gray-700 hover:bg-gray-50 text-sm cursor-pointer"
                                         onClick={() => {
                                             if (!visitId) return;
-                                            // TODO: gọi API tạo hóa đơn ở đây
                                             handleSelectVisit(visitId);
                                             setOpenMenuIndex(null);
                                         }}
                                     >
-                                        <i className="fa-solid fa-file-invoice text-teal-600 text-base"></i>
-                                        <span className="text-base text-gray-700">Tạo hóa đơn</span>
+                                        <i className="fa-solid fa-file-invoice text-teal-600 text-sm"></i>
+                                        <span className="text-sm text-gray-700">Tạo hóa đơn</span>
                                     </button>
 
                                     <button
-                                        className="ml-2 flex items-center gap-3 px-4 py-2 w-full text-left text-gray-700 hover:bg-gray-50 text-sm cursor-pointer"
+                                        className="ml-1 flex items-center gap-2 px-3 py-1.5 w-full text-left text-gray-700 hover:bg-gray-50 text-sm cursor-pointer"
                                         onClick={() => {
                                             if (!visitId) return;
-                                            // alert(`In phiếu cho visitId: ${visitId}`);
                                             handlePrintTicket(visitId);
                                             setOpenMenuIndex(null);
                                         }}
                                     >
-                                        <i className="fa-solid fa-print text-indigo-600 text-base"></i>
-                                        {dataVisit[openMenuIndex]?.is_printed ? (
-                                            <span className="text-base text-gray-700">In lại phiếu</span>
+                                        <i className="fa-solid fa-print text-indigo-600 text-sm"></i>
+                                        {isPrinted ? (
+                                            <span className="text-sm text-gray-700">In lại phiếu</span>
                                         ) : (
-                                            <span className="text-base text-gray-700">In phiếu</span>
+                                            <span className="text-sm text-gray-700">In phiếu</span>
                                         )}
 
                                     </button>
 
-                                    <button
-                                        className="ml-2 flex items-center gap-3 px-4 py-2 w-full text-left text-red-700 hover:bg-red-50 text-sm cursor-pointer"
+                                    {/* <button
+                                        className="ml-1 flex items-center gap-2 px-3 py-1.5 w-full text-left text-red-700 hover:bg-red-50 text-sm cursor-pointer"
                                         onClick={() => {
                                             if (!visitId) return;
                                             alert(`Xóa visitId: ${visitId}`);
@@ -823,9 +940,9 @@ export default function Visit() {
                                             setOpenMenuIndex(null);
                                         }}
                                     >
-                                        <i className="fa-solid fa-trash-can text-red-500 text-base"></i>
-                                        <span className="text-base text-gray-700">Xóa</span>
-                                    </button>
+                                        <i className="fa-solid fa-trash-can text-red-500 text-sm"></i>
+                                        <span className="text-sm text-gray-700">Xóa</span>
+                                    </button> */}
                                 </>
                             );
                         })()}
@@ -848,14 +965,13 @@ export default function Visit() {
                             setCreatedInvoice(res);
                             setShowCreateInvoiceForm(false);
                             setShowPaymentMethodForm(true);
+                            showToast("Tạo hóa đơn thành công!", "success");
                         } catch (error) {
-                            console.error("Error object:", error);
-                            const errorMsg = error.response?.data?.message
-                                ? Array.isArray(error.response.data.message)
-                                    ? error.response.data.message.join(", ")
-                                    : error.response.data.message
-                                : error.message;
-                            alert("Lỗi tạo hóa đơn:\n" + errorMsg);
+                            const message =
+                                error?.response?.data?.message || error.message ||
+                                "Không thể tạo hóa đơn. Vui lòng thử lại!";
+                            // setShowCreateInvoiceForm(false);
+                            showToast(message, "error");
                         }
                     }}
                     onClose={() => setShowCreateInvoiceForm(false)}
@@ -872,22 +988,38 @@ export default function Visit() {
                             try {
                                 if (method === "CASH") {
                                     // Gọi API thanh toán tiền mặt
-                                    const res = await paymentCash(dto);
-                                    console.log("Thanh toán tiền mặt thành công!", res);
+                                    await paymentCash(dto);
+                                    showToast("Thanh toán thành công", "success");
                                 }
                                 else if (method === "BANK_TRANSFER") {
                                     // VietQR thanh toán đã được xử lý trong CreateVietQRModal
                                     // và onSuccess callback sẽ gọi onSubmit khi thanh toán thành công
-                                    console.log("Thanh toán chuyển khoản VietQR thành công!");
+                                    showToast("Thanh toán thành công", "success")
                                 }
 
                                 setShowPaymentMethodForm(false);
                             } catch (error) {
-                                console.error("Lỗi thanh toán:", error);
-                                alert("Lỗi thanh toán: " + (error.response?.data?.message || error.message));
+                                const message = error?.response?.data?.message || error.message || "Chỉ có thể thanh toán hóa đơn ngày hôm nay!";
+                                setShowPaymentMethodForm(false);
+                                showToast(message, "error");
                             }
                         }}
-                        onClose={() => setShowPaymentMethodForm(false)}
+                        onClose={() => {
+                            setShowPaymentMethodForm(false);
+                            showToast("Chưa thực hiện thanh toán!", "warn");
+                        }}
+                    />,
+                    document.body
+                )
+            }
+
+            {/* Toast */}
+            {toast &&
+                createPortal(
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
                     />,
                     document.body
                 )

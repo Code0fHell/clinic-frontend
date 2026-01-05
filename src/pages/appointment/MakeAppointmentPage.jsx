@@ -267,16 +267,19 @@ const MakeAppointmentPage = () => {
                 });
                 navigate("/patient/appointments");
             } else {
-                await guestBookAppointment({
+                const response = await guestBookAppointment({
                     ...form,
                     ...dto,
                 });
-                setToast({
-                    message: "Vui lòng kiểm tra email để xác nhận lịch hẹn.",
-                    type: "info",
-                    duration: 6000,
+                // Navigate to success page with guest info
+                navigate("/appointment/success", {
+                    state: {
+                        isGuest: true,
+                        email: form.email,
+                        appointmentDate: selectedSlot.slot_start,
+                        doctorName: selectedDoctor?.user?.full_name,
+                    },
                 });
-                navigate("/patient/appointments");
             }
         } catch (err) {
             const errMessage =
