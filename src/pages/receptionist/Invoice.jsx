@@ -160,6 +160,24 @@ export default function Invoice() {
         }
     }, [showPaymentMethodForm]);
 
+    const formatDateTime = (isoString) => {
+        if (!isoString) return "—";
+
+        // Chuyển đổi chuỗi ISO thành đối tượng Date
+        const date = new Date(isoString);
+
+        // Cộng thêm 7 giờ để lấy giờ Việt Nam
+        const utcOffset = 7 * 60;
+        const localTime = new Date(date.getTime() + utcOffset * 60 * 1000);
+
+        const datePart = localTime.toISOString().slice(0, 10).split("-").reverse().join("-");
+        const timePart = localTime.toISOString().slice(11, 16);
+
+        // return `${datePart} ${timePart}`;
+        return `${datePart}`;
+    };
+
+
     return (
         <div className="h-screen bg-gray-50 font-sans flex flex-col overflow-hidden">
             {/* HEADER */}
@@ -376,7 +394,7 @@ export default function Invoice() {
 
                                                         {/* Ngày tạo */}
                                                         <td className="w-[130px] px-3 py-2 border-r border-gray-200">
-                                                            {item.created_at.slice(0, 10).split('-').reverse().join('-')}
+                                                            {formatDateTime(item.created_at)}
                                                         </td>
 
                                                         {/* Loại hóa đơn */}
