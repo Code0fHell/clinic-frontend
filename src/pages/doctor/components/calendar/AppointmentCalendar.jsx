@@ -59,12 +59,12 @@ const AppointmentCalendar = () => {
   }, [fetchAppointments]);
 
   return (
-    <div className="flex gap-6 px-6 pt-[20px] bg-gray-50 min-h-screen ml-[50px]">
+    <div className="flex gap-6 px-6 pt-[20px] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen ml-[50px]">
       {/* Lịch chính */}
-      <div className="flex-1 min-w-0 bg-white rounded-xl shadow p-4">
+      <div className="flex-1 min-w-0 bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
         <CalendarHeader view={view} setView={setView} current={current} setCurrent={setCurrent} />
 
-        <div className="mt-4 rounded-lg p-2">
+        <div className="mt-6 rounded-xl overflow-hidden">
           {view === "week" && <CalendarWeekView appointments={appointments} current={current} />}
           {view === "month" && <CalendarMonthView appointments={appointments} current={current} />}
           {view === "day" && <CalendarDayView appointments={appointments} current={current} />}
