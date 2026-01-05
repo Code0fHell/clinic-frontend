@@ -119,6 +119,10 @@ const PatientLoginPage = () => {
           <span>Chưa có tài khoản?</span>
           <Link to="/register" className="ml-2 px-4 py-2 border rounded text-blue-600 hover:bg-blue-50">Đăng ký</Link>
         </div>
+        <div className="mt-6 text-center">
+          <span>Bạn không phải bệnh nhân?</span>
+          <Link to="/staff/login" className="ml-2 px-4 py-2 border rounded text-blue-600 hover:bg-blue-50">Đăng nhập với tư cách nhân viên</Link>
+        </div>
       </div>
     </div>
   );
