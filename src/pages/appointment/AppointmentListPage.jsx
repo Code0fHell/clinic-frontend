@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import RoleBasedLayout from "../../components/layout/RoleBasedLayout";
-import { getMyAppointments, cancelMyAppointment } from "../../api/appointment.api";
+import {
+    getMyAppointments,
+    cancelMyAppointment,
+} from "../../api/appointment.api";
 import { vietnameseSearch } from "../../utils/vietnameseSearch";
 import {
     parseUTCDate,
     formatUTCTime,
     formatUTCDateOnly,
 } from "../../utils/dateUtils";
+const DEFAULT_TZ = "Asia/Ho_Chi_Minh";
 import Toast from "../../components/modals/Toast";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
@@ -46,74 +50,119 @@ const TableFilters = ({
     onSearchChange,
     dateFilter,
     onDateFilterChange,
-}) => (
-    <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-                <input
-                    type="text"
-                    placeholder="Tìm kiếm theo tên bác sĩ..."
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full px-4 py-3 pl-12 pr-4 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition"
-                />
-                <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
-            <div className="flex gap-2">
-                <button
-                    onClick={() => onDateFilterChange("day")}
-                    className={`px-4 py-3 rounded-lg font-medium transition ${
-                        dateFilter === "day"
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
-                    }`}
-                >
-                    Hôm nay
-                </button>
-                <button
-                    onClick={() => onDateFilterChange("week")}
-                    className={`px-4 py-3 rounded-lg font-medium transition ${
-                        dateFilter === "week"
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
-                    }`}
-                >
-                    Tuần này
-                </button>
-                <button
-                    onClick={() => onDateFilterChange("month")}
-                    className={`px-4 py-3 rounded-lg font-medium transition ${
-                        dateFilter === "month"
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
-                    }`}
-                >
-                    Tháng này
-                </button>
-                <button
-                    onClick={() => onDateFilterChange("upcoming")}
-                    className={`px-4 py-3 rounded-lg font-medium transition ${
-                        dateFilter === "upcoming"
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
-                    }`}
-                >
-                    Lịch hẹn sắp tới
-                </button>
-                <button
-                    onClick={() => onDateFilterChange("all")}
-                    className={`px-4 py-3 rounded-lg font-medium transition ${
-                        dateFilter === "all"
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
-                    }`}
-                >
-                    Tất cả
-                </button>
+    statusFilter,
+    onStatusFilterChange,
+}) => {
+    const [showDateOptions, setShowDateOptions] = useState(false);
+    const [showStatusOptions, setShowStatusOptions] = useState(false);
+
+    const dateOptions = [
+        { label: "Hôm nay", value: "day" },
+        { label: "Tuần này", value: "week" },
+        { label: "Tháng này", value: "month" },
+        { label: "Lịch hẹn sắp tới", value: "upcoming" },
+        { label: "Tất cả", value: "all" },
+    ];
+    const statusOptions = [
+        { label: "Tất cả", value: "all" },
+        { label: "Chờ xử lý", value: "PENDING" },
+        { label: "Đã xác nhận", value: "CONFIRMED" },
+        { label: "Đã đến", value: "CHECKED_IN" },
+        { label: "Hoàn thành", value: "COMPLETED" },
+        { label: "Đã hủy", value: "CANCELLED" },
+    ];
+
+    return (
+        <div className="mb-6 space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex-1 relative mb-2 md:mb-0">
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm theo tên bác sĩ..."
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="w-full px-4 py-3 pl-12 pr-4 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                    />
+                    <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                    <div className="relative">
+                        <button
+                            type="button"
+                            className={`px-4 py-3 rounded-lg font-medium transition ${
+                                showDateOptions
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
+                            }`}
+                            onClick={() => {
+                                setShowDateOptions((prev) => !prev);
+                                setShowStatusOptions(false);
+                            }}
+                        >
+                            Lọc theo thời gian
+                        </button>
+                        {showDateOptions && (
+                            <div className="absolute z-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px]">
+                                {dateOptions.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        className={`block w-full text-left px-4 py-2 hover:bg-blue-100 ${
+                                            dateFilter === opt.value
+                                                ? "bg-blue-50 font-semibold"
+                                                : ""
+                                        }`}
+                                        onClick={() => {
+                                            onDateFilterChange(opt.value);
+                                            setShowDateOptions(false);
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <button
+                            type="button"
+                            className={`px-4 py-3 rounded-lg font-medium transition ${
+                                showStatusOptions
+                                    ? "bg-green-600 text-white"
+                                    : "bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400"
+                            }`}
+                            onClick={() => {
+                                setShowStatusOptions((prev) => !prev);
+                                setShowDateOptions(false);
+                            }}
+                        >
+                            Lọc theo trạng thái
+                        </button>
+                        {showStatusOptions && (
+                            <div className="absolute z-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px]">
+                                {statusOptions.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        className={`block w-full text-left px-4 py-2 hover:bg-green-100 ${
+                                            statusFilter === opt.value
+                                                ? "bg-green-50 font-semibold"
+                                                : ""
+                                        }`}
+                                        onClick={() => {
+                                            onStatusFilterChange(opt.value);
+                                            setShowStatusOptions(false);
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 // Component bảng lịch hẹn
 const AppointmentTable = ({
@@ -204,7 +253,9 @@ const AppointmentTable = ({
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {paginatedAppointments.map((appointment) => {
-                            const scheduledDate = dayjs(appointment.scheduled_date);
+                            const scheduledDate = dayjs(
+                                appointment.scheduled_date
+                            );
                             return (
                                 <tr
                                     key={appointment.id}
@@ -261,7 +312,9 @@ const AppointmentTable = ({
                                     <td className="px-6 py-4">
                                         {canCancelAppointment(appointment) ? (
                                             <button
-                                                onClick={() => onCancel(appointment)}
+                                                onClick={() =>
+                                                    onCancel(appointment)
+                                                }
                                                 className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition"
                                             >
                                                 Hủy lịch
@@ -416,8 +469,13 @@ const AppointmentCalendar = ({ appointments, currentDate, onDateChange }) => {
                                             className="relative border-r border-b h-[80px] p-1"
                                         >
                                             {appts.map((a) => {
-                                                const start = dayjs(a.scheduled_date);
-                                                const end = start.add(30, "minute");
+                                                const start = dayjs(
+                                                    a.scheduled_date
+                                                );
+                                                const end = start.add(
+                                                    30,
+                                                    "minute"
+                                                );
                                                 const color = getStatusColor(
                                                     a.status
                                                 );
@@ -431,9 +489,7 @@ const AppointmentCalendar = ({ appointments, currentDate, onDateChange }) => {
                                                                 start
                                                             )}{" "}
                                                             -{" "}
-                                                            {formatUTCTime(
-                                                                end
-                                                            )}
+                                                            {formatUTCTime(end)}
                                                         </div>
                                                         <div className="text-[10px] truncate">
                                                             {a.doctor?.user
@@ -484,6 +540,7 @@ const AppointmentListPage = () => {
     const [view, setView] = useState("table");
     const [searchQuery, setSearchQuery] = useState("");
     const [dateFilter, setDateFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({
@@ -520,12 +577,12 @@ const AppointmentListPage = () => {
         let filtered = [...appointments];
 
         // Filter by date
-        const now = dayjs();
+        const now = dayjs().tz(DEFAULT_TZ);
         if (dateFilter === "day") {
             const today = now.startOf("day");
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = dayjs(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date).tz(DEFAULT_TZ);
                 return apptDate.isSame(today, "day");
             });
         } else if (dateFilter === "week") {
@@ -533,7 +590,7 @@ const AppointmentListPage = () => {
             const weekEnd = now.endOf("week").subtract(1, "day");
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = dayjs(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date).tz(DEFAULT_TZ);
                 return (
                     apptDate.isAfter(weekStart.subtract(1, "day")) &&
                     apptDate.isBefore(weekEnd.add(1, "day"))
@@ -544,7 +601,7 @@ const AppointmentListPage = () => {
             const monthEnd = now.endOf("month");
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = dayjs(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date).tz(DEFAULT_TZ);
                 return (
                     apptDate.isAfter(monthStart.subtract(1, "day")) &&
                     apptDate.isBefore(monthEnd.add(1, "day"))
@@ -553,9 +610,14 @@ const AppointmentListPage = () => {
         } else if (dateFilter === "upcoming") {
             filtered = filtered.filter((a) => {
                 if (!a.scheduled_date) return false;
-                const apptDate = dayjs(a.scheduled_date);
+                const apptDate = dayjs(a.scheduled_date).tz(DEFAULT_TZ);
                 return apptDate.isAfter(now) && a.status !== "CANCELLED";
             });
+        }
+
+        // Filter by trạng thái
+        if (statusFilter !== "all") {
+            filtered = filtered.filter((a) => a.status === statusFilter);
         }
 
         // Filter by search query (doctor name)
@@ -568,8 +630,12 @@ const AppointmentListPage = () => {
 
         // Sort by scheduled date (handle null values)
         filtered.sort((a, b) => {
-            const dateA = a.scheduled_date ? dayjs(a.scheduled_date) : null;
-            const dateB = b.scheduled_date ? dayjs(b.scheduled_date) : null;
+            const dateA = a.scheduled_date
+                ? dayjs(a.scheduled_date).tz(DEFAULT_TZ)
+                : null;
+            const dateB = b.scheduled_date
+                ? dayjs(b.scheduled_date).tz(DEFAULT_TZ)
+                : null;
 
             if (!dateA && !dateB) return 0;
             if (!dateA) return 1;
@@ -580,7 +646,7 @@ const AppointmentListPage = () => {
 
         setFilteredAppointments(filtered);
         setCurrentPage(1);
-    }, [appointments, searchQuery, dateFilter]);
+    }, [appointments, searchQuery, dateFilter, statusFilter]);
 
     useEffect(() => {
         filterAppointments();
@@ -631,6 +697,11 @@ const AppointmentListPage = () => {
                                 dateFilter={dateFilter}
                                 onDateFilterChange={(filter) => {
                                     setDateFilter(filter);
+                                    setCurrentPage(1);
+                                }}
+                                statusFilter={statusFilter}
+                                onStatusFilterChange={(filter) => {
+                                    setStatusFilter(filter);
                                     setCurrentPage(1);
                                 }}
                             />
