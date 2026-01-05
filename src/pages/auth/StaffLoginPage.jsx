@@ -4,7 +4,7 @@ import useAuth from '../../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import Toast from '../../components/modals/Toast';
 
-const LoginPage = () => {
+const StaffLoginPage = () => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -35,6 +35,13 @@ const LoginPage = () => {
       const res = await loginApi(form);
       const { user, token } = res.data;
 
+      // Only allow staff roles (not PATIENT)
+      const allowedRoles = ['DOCTOR', 'RECEPTIONIST', 'PHARMACIST', 'OWNER', 'ADMIN'];
+      if (!allowedRoles.includes(user.role)) {
+        setError('Tài khoản này không phải tài khoản nhân viên. Vui lòng đăng nhập tại trang dành cho bệnh nhân.');
+        return;
+      }
+
       localStorage.setItem("access_token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -44,9 +51,6 @@ const LoginPage = () => {
       // Điều hướng theo vai trò
       setTimeout(() => {
         switch (user.role) {
-          case "PATIENT":
-            navigate("/");
-            break;
           case "PHARMACIST":
             navigate("/pharmacist/home");
             break;
@@ -54,11 +58,11 @@ const LoginPage = () => {
             navigate("/receptionist/home");
             break;
           case "DOCTOR":
-            if (user.staff.doctor_type === "CLINICAL") {
+            if (user.staff?.doctor_type === "CLINICAL") {
               navigate("/doctor/dashboard");
-            } else if (user.staff.doctor_type === "DIAGNOSTIC") {
+            } else if (user.staff?.doctor_type === "DIAGNOSTIC") {
               navigate("/diagnostic/dashboard");
-            } else if (user.staff.doctor_type === "LAB") {
+            } else if (user.staff?.doctor_type === "LAB") {
               navigate("/lab/dashboard");
             }
             break;
@@ -69,7 +73,7 @@ const LoginPage = () => {
             navigate("/admin");
             break;
           default:
-            navigate("/home");
+            navigate("/");
         }
       }, 2000);
     } catch (err) {
@@ -82,9 +86,8 @@ const LoginPage = () => {
     }
   };
 
-
   return (
-    <div className="flex min-h-screen bg-blue-600">
+    <div className="flex min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700">
       {toast && (
         <Toast
           message={toast.message}
@@ -93,13 +96,16 @@ const LoginPage = () => {
           duration={2000}
         />
       )}
-      <div className="flex flex-col items-center justify-center w-1/2 bg-blue-600 text-white">
-        <img src="/logo.svg" alt="Logo" className="w-48 h-48 rounded-full mb-6" />
-        <h1 className="text-3xl font-bold">PMedClinic</h1>
+      <div className="flex flex-col items-center justify-center w-1/2 text-white">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+          <img src="/logo.svg" alt="Logo" className="w-32 h-32 rounded-full mb-6 mx-auto" />
+          <h1 className="text-3xl font-bold text-center">PMedClinic</h1>
+          <p className="mt-4 text-lg text-center">Hệ thống quản lý phòng khám</p>
+        </div>
       </div>
-      <div className="flex flex-col justify-center w-1/2 bg-white rounded-l-3xl px-16">
+      <div className="flex flex-col justify-center w-1/2 bg-white rounded-l-3xl px-16 shadow-2xl">
         <h2 className="text-2xl font-bold mb-2">Đăng nhập</h2>
-        <p className="mb-6 text-gray-500">Đăng nhập để trải nghiệm thêm các dịch vụ của phòng khám</p>
+        <p className="mb-6 text-gray-500">Vui lòng đăng nhập để tiếp tục</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 font-medium">Tên đăng nhập</label>
@@ -108,7 +114,7 @@ const LoginPage = () => {
               name="username"
               value={form.username}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring placeholder:text-gray-400"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
               placeholder="Nhập tên đăng nhập"
               required
             />
@@ -120,31 +126,28 @@ const LoginPage = () => {
               name="password"
               value={form.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring placeholder:text-gray-400"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
               placeholder="Nhập mật khẩu"
               required
             />
           </div>
           {error && (
-            <div className="text-red-500 mt-2 text-sm">{error}</div>
+            <div className="text-red-500 mt-2 text-sm bg-red-50 p-3 rounded">{error}</div>
           )}
           <div className="flex justify-between items-center">
             <Link to="/forgot-password" className="text-blue-600 hover:underline text-sm">Quên mật khẩu?</Link>
           </div>
           <button
             type="submit"
-            className="w-full py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition"
+            className="w-full py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition shadow-md"
           >
             Đăng nhập
           </button>
         </form>
-        <div className="mt-6 text-center">
-          <span>Chưa có tài khoản?</span>
-          <Link to="/register" className="ml-2 px-4 py-2 border rounded text-blue-600 hover:bg-blue-50">Đăng ký</Link>
-        </div>
       </div>
     </div>
   );
 };
 
-export default LoginPage;
+export default StaffLoginPage;
+

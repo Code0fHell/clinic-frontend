@@ -60,7 +60,7 @@ const RegisterPage = () => {
         try {
             await registerApi(form);
             setToast({ message: "Đăng ký thành công! Vui lòng đăng nhập.", type: "success" });
-            setTimeout(() => navigate("/login"), 2000);
+            setTimeout(() => navigate("/patient/login"), 2000);
         } catch (err) {
             const msg = err.response?.data?.message;
             if (Array.isArray(msg)) setError(msg.join(", "));
@@ -222,7 +222,7 @@ const RegisterPage = () => {
                 <div className="mt-6 text-center">
                     <span>Đã có tài khoản?</span>
                     <Link
-                        to="/login"
+                        to="/patient/login"
                         className="ml-2 px-4 py-2 border rounded text-blue-600 hover:bg-blue-50"
                     >
                         Đăng nhập

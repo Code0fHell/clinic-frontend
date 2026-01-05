@@ -7,31 +7,36 @@ import Footer from "./Footer";
 
 const RoleBasedLayout = ({ children }) => {
   const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role || "PATIENT"; // mặc định dành cho bệnh nhân
+  const role = user?.role || null;
 
   let HeaderComponent = null;
   let FooterComponent = null;
+  
+  // Show header for patients or guests (no login)
+  if (!role || role === "PATIENT") {
+    HeaderComponent = Header;
+    FooterComponent = Footer;
+  }
+  
+  // For other roles, no header/footer (they have their own layouts)
   switch (role) {
     case "DOCTOR":
-      // HeaderComponent = DoctorHeader;
-      break;
     case "RECEPTIONIST":
-    //   HeaderComponent = ReceptionHeader;
-      break;
     case "OWNER":
     case "ADMIN":
-    //   HeaderComponent = AdminHeader;
+    case "PHARMACIST":
+      // These roles have their own headers
       break;
     default:
-      HeaderComponent = Header;
-      FooterComponent = Footer;
+      // Guest or PATIENT - show public header
+      break;
   }
 
   return (
     <div className="flex flex-col min-h-screen">
-      { role === "PATIENT" && <HeaderComponent /> }
+      {HeaderComponent && <HeaderComponent />}
       <main className="flex-1">{children}</main>
-      { role === "PATIENT" && <FooterComponent /> }
+      {FooterComponent && <FooterComponent />}
     </div>
   );
 };
