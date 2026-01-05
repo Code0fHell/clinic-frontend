@@ -105,3 +105,58 @@ export const cancelMyAppointment = async (appointmentId) => {
   const res = await axiosClient.put(`/appointment/${appointmentId}/cancel`);
   return res.data;
 };
+
+// Đếm số lịch hẹn
+export const getCountAppointmentToday = async () => {
+  const res = await axiosClient.get('/appointment/count');
+  return res.data;
+}
+
+// Lấy appointment cho dashboard
+export const getAppointmentDashboard = async ({
+  keyword = "",
+  appointmentFilter = "PENDING",
+  cursor = null,
+  limit = 10,
+} = {}) => {
+  try {
+    const params = {
+      keyword,
+      appointmentFilter,
+      limit,
+    };
+
+    // chỉ gửi cursor khi có (load lần 2 trở đi)
+    if (cursor) {
+      params.cursor = cursor;
+    }
+
+    const res = await axiosClient.get("/appointment/dashboard", { params });
+
+    return res.data;
+    // { data: [], meta: { limit, hasMore, nextCursor } }
+  } catch (err) {
+    console.error(
+      "Lỗi khi lấy danh sách lịch hẹn:",
+      err.response?.data || err.message
+    );
+
+    return {
+      data: [],
+      meta: {
+        limit,
+        hasMore: false,
+        nextCursor: null,
+      },
+    };
+  }
+};
+
+//Hủy lịch hẹn cho dashboard
+export const cancelAppointmentDashboard = async (appointmentId) => {
+  const res = await axiosClient.put(
+    `/appointment/dashboard/cancel/${appointmentId}`
+  );
+  return res.data;
+};
+
