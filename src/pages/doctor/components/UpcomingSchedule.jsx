@@ -72,11 +72,15 @@ const UpcomingSchedule = () => {
         <div className="relative border-l-2 border-gray-200 pl-6">
           {queue.length > 0 ? (
             queue.map((v, idx) => {
-              const time = formatUTCTime(v.appointment.scheduled_date);
+              const time = v.appointment
+                ? formatUTCTime(v.appointment.scheduled_date)
+                : v.checked_in_at
+                ? formatUTCTime(v.checked_in_at)
+                : "--";
               const patientName = v.patient?.patient_full_name || "Chưa rõ";
               const reason = v.appointment?.reason || v.visit_type || "--";
               const doctorName =
-                v.doctor?.user?.full_name || v.doctor?.id || "Chưa rõ";
+                v.doctor?.user?.full_name || v.doctor?.name || v.doctor?.id || "Chưa rõ";
               const isNext = idx === 0;
 
               return (

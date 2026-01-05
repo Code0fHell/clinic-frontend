@@ -60,7 +60,7 @@ export const getDetailVisit = async (visitId) => {
 // Lấy danh sách bệnh nhân trong hàng chờ khám hôm nay
 export const getTodayVisitQueue = async () => {
     const res = await axiosClient.get("/visit/queue");
-    return res.data;
+    return res.data.data;
 };
 
 // Cập nhật trạng thái của visit (ví dụ: khi "Bắt đầu khám")

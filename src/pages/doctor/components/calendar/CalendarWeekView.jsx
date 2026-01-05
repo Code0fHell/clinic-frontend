@@ -19,50 +19,66 @@ const CalendarWeekView = ({ appointments, current }) => {
     const getAppointmentsByDayHour = (date, hour) =>
         appointments.filter((a) => {
             if (!a.scheduled_date) return false;
-            const apptUTC = parseUTCDate(a.scheduled_date);
-            if (!apptUTC) return false;
-            // Get UTC hour from appointment (matches backend time)
-            const apptHour = apptUTC.hour();
-            // Compare UTC appointment date with local calendar date
-            // Convert local date to UTC by creating UTC date at start of that day
-            const localDateStart = dayjs(date).startOf("day");
-            const localDateAsUTC = dayjs.utc(
-                localDateStart.format("YYYY-MM-DD")
-            );
-            return apptUTC.isSame(localDateAsUTC, "day") && apptHour === hour;
+            const apptDate = parseUTCDate(a.scheduled_date);
+            if (!apptDate) return false;
+            // Get hour from appointment (stored as local time in backend)
+            const apptHour = apptDate.hour();
+            // Compare appointment date with calendar date (both in local time)
+            return apptDate.isSame(dayjs(date), "day") && apptHour === hour;
         });
 
+    const isToday = (date) => date.isSame(dayjs(), 'day');
+
     return (
-        <div className="border border-gray-200 rounded-lg">
-            <div className="grid grid-cols-8 text-xs min-w-[900px]">
+        <div className="border-2 border-gray-200 rounded-xl shadow-lg overflow-hidden">
+            <div className="grid grid-cols-8 text-sm min-w-[900px]">
                 {/* Header */}
-                <div className="bg-gray-100 font-semibold text-center border-r border-b py-2">
-                    Giờ
+                <div className="bg-gradient-to-br from-slate-100 to-slate-200 font-bold text-center border-r-2 border-b-2 border-gray-300 py-3 sticky top-0 z-10">
+                    <svg className="w-5 h-5 mx-auto mb-1 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-gray-700">Giờ</span>
                 </div>
-                {weekDates.map((date, idx) => (
-                    <div
-                        key={idx}
-                        className="bg-gray-100 font-semibold text-center border-r border-b py-2"
-                    >
-                        {weekdays[idx]}{" "}
-                        <span className="text-gray-500">
-                            {date.format("DD/MM")}
-                        </span>
-                    </div>
-                ))}
+                {weekDates.map((date, idx) => {
+                    const today = isToday(date);
+                    return (
+                        <div
+                            key={idx}
+                            className={`font-bold text-center border-r-2 border-b-2 border-gray-300 py-3 sticky top-0 z-10 ${
+                                today 
+                                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg" 
+                                    : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700"
+                            }`}
+                        >
+                            <div className="text-xs mb-1">{weekdays[idx]}</div>
+                            <div className={`text-lg font-extrabold ${today ? "text-white" : "text-gray-800"}`}>
+                                {date.format("DD")}
+                            </div>
+                            <div className={`text-xs ${today ? "text-blue-100" : "text-gray-500"}`}>
+                                {date.format("MM/YYYY")}
+                            </div>
+                        </div>
+                    );
+                })}
 
                 {/* Body */}
-                {hours.map((hour) => (
+                {hours.map((hour, hourIdx) => (
                     <React.Fragment key={hour}>
-                        <div className="text-center border-r border-b py-2 text-gray-600">
-                            {hour}:00
+                        <div className={`text-center border-r-2 border-b border-gray-200 py-3 font-semibold ${
+                            hourIdx % 2 === 0 ? "bg-slate-50" : "bg-white"
+                        }`}>
+                            <div className="text-base text-gray-700">{hour}:00</div>
+                            <div className="text-xs text-gray-400">{hour + 1}:00</div>
                         </div>
                         {weekDates.map((date, idx) => {
                             const appts = getAppointmentsByDayHour(date, hour);
+                            const today = isToday(date);
                             return (
                                 <div
                                     key={idx}
-                                    className="relative border-r border-b h-[60px] p-1"
+                                    className={`relative border-r-2 border-b h-[70px] p-1.5 transition-all duration-200 hover:bg-blue-50 ${
+                                        today ? "bg-blue-50/30" : hourIdx % 2 === 0 ? "bg-gray-50/50" : "bg-white"
+                                    }`}
                                 >
                                     {appts.map((a) => {
                                         const startUTC = parseUTCDate(
@@ -72,30 +88,33 @@ const CalendarWeekView = ({ appointments, current }) => {
                                             a.duration || 30,
                                             "minute"
                                         );
-                                        const color =
+                                        const colorConfig =
                                             a.status === "CHECKED_IN"
-                                                ? "bg-green-500"
+                                                ? { bg: "bg-gradient-to-br from-green-500 to-emerald-600", shadow: "shadow-green-500/40", border: "border-green-400" }
                                                 : a.status === "PENDING"
-                                                ? "bg-yellow-500"
+                                                ? { bg: "bg-gradient-to-br from-amber-400 to-yellow-500", shadow: "shadow-yellow-500/40", border: "border-yellow-400" }
                                                 : a.status === "COMPLETED"
-                                                ? "bg-blue-500"
-                                                : "bg-gray-400";
+                                                ? { bg: "bg-gradient-to-br from-blue-500 to-indigo-600", shadow: "shadow-blue-500/40", border: "border-blue-400" }
+                                                : { bg: "bg-gradient-to-br from-gray-400 to-gray-500", shadow: "shadow-gray-500/40", border: "border-gray-400" };
                                         return (
                                             <div
                                                 key={a.id}
-                                                className={`absolute top-1 left-1 right-1 rounded ${color} text-white text-[11px] px-2 py-1`}
-                                                title={
-                                                    a.patient?.patient_full_name
-                                                }
+                                                className={`absolute top-1.5 left-1.5 right-1.5 rounded-lg ${colorConfig.bg} text-white text-[11px] px-2.5 py-1.5 shadow-lg ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:scale-105 transition-transform duration-200`}
+                                                title={a.patient?.patient_full_name}
                                             >
-                                                <div className="font-medium truncate">
-                                                    {a.patient
-                                                        ?.patient_full_name ||
-                                                        "N/A"}
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <div className="font-semibold truncate">
+                                                        {a.patient?.patient_full_name || "N/A"}
+                                                    </div>
                                                 </div>
-                                                <div className="text-[10px]">
-                                                    {formatUTCTime(startUTC)} -{" "}
-                                                    {formatUTCTime(endUTC)}
+                                                <div className="flex items-center gap-1 text-[10px] opacity-90">
+                                                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span>{formatUTCTime(startUTC)} - {formatUTCTime(endUTC)}</span>
                                                 </div>
                                             </div>
                                         );

@@ -142,7 +142,7 @@ const MakeAppointmentPage = () => {
     useEffect(() => {
         if (!selectedDate || !selectedDoctor) return;
         const schedule = schedules.find(
-            (s) => dayjs(s.work_date).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD") === selectedDate
+            (s) => dayjs(s.work_date).format("YYYY-MM-DD") === selectedDate
         );
         if (!schedule) {
             setSlots([]);
@@ -168,13 +168,13 @@ const MakeAppointmentPage = () => {
     }, [selectedDoctor, selectedDate, schedules]);
 
     const visibleSlots = slots.filter((slot) => {
-        const slotDate = dayjs.utc(slot.slot_start).format("YYYY-MM-DD");
-        const nowDate = dayjs.utc().format("YYYY-MM-DD");
+        const slotDate = dayjs(slot.slot_start).format("YYYY-MM-DD");
+        const nowDate = dayjs().format("YYYY-MM-DD");
 
         if (slotDate === nowDate) {
-            return dayjs.utc(slot.slot_end).isAfter(dayjs.utc());
+            return dayjs(slot.slot_end).isAfter(dayjs());
         }
-        return dayjs.utc(slot.slot_end).isAfter(dayjs.utc());
+        return dayjs(slot.slot_end).isAfter(dayjs());
     });
 
     // Date options: today, tomorrow, day after
@@ -297,7 +297,7 @@ const MakeAppointmentPage = () => {
         }
     };
 
-    // Vietnam timezone helper
+    // Format time helper (local time)
     const toVNTime = (date) => dayjs(date).format("HH:mm");
 
     // Handle Other Date selection
@@ -631,9 +631,7 @@ const MakeAppointmentPage = () => {
                                                         : ""
                                                 }`}
                                             >
-                                                {dayjs
-                                                    .utc(slot.slot_start)
-                                                    .format("HH:mm")}
+                                                {dayjs(slot.slot_start).format("HH:mm")}
                                             </button>
                                         ))}
                                     </div>

@@ -37,8 +37,6 @@ const TodayVisitQueue = () => {
     const [historyPatientId, setHistoryPatientId] = useState(null);
     const tableRef = useRef(null);
 
-    console.log("queue", queue);
-
     const fetchQueue = async () => {
         try {
             const data = await getTodayVisitQueue();
