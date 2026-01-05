@@ -162,8 +162,15 @@ export default function Appointment() {
     const formatDateTime = (isoString) => {
         if (!isoString) return "—";
 
-        const datePart = isoString.slice(0, 10).split("-").reverse().join("-");
-        const timePart = isoString.slice(11, 16);
+        // Chuyển đổi chuỗi ISO thành đối tượng Date
+        const date = new Date(isoString);
+
+        // Cộng thêm 7 giờ để lấy giờ Việt Nam
+        const utcOffset = 7 * 60;
+        const localTime = new Date(date.getTime() + utcOffset * 60 * 1000);
+
+        const datePart = localTime.toISOString().slice(0, 10).split("-").reverse().join("-");
+        const timePart = localTime.toISOString().slice(11, 16);
 
         return `${datePart} ${timePart}`;
     };

@@ -26,7 +26,23 @@ export default function TransactionTable() {
 
         setLoading(false);
     }, [cursor, hasMore, loading]);
-    // console.log("tran: " + JSON.stringify(transactions));
+    
+    const formatDateTime = (isoString) => {
+        if (!isoString) return "—";
+
+        // Chuyển đổi chuỗi ISO thành đối tượng Date
+        const date = new Date(isoString);
+
+        // Cộng thêm 7 giờ để lấy giờ Việt Nam
+        const utcOffset = 7 * 60;
+        const localTime = new Date(date.getTime() + utcOffset * 60 * 1000);
+
+        const datePart = localTime.toISOString().slice(0, 10).split("-").reverse().join("-");
+        const timePart = localTime.toISOString().slice(11, 16);
+
+        // return `${datePart} ${timePart}`;
+        return `${datePart}`;
+    };
 
     // Load lần đầu
     useEffect(() => {
@@ -115,7 +131,7 @@ export default function TransactionTable() {
 
                                 {/* Ngày thanh toán */}
                                 <div className="px-4 py-3 text-base text-gray-600 whitespace-nowrap text-center">
-                                    {new Date(tx.paidDate).toISOString().slice(0, 10).split("-").reverse().join("/")}
+                                    {formatDateTime(tx.paidDate)}
                                 </div>
                             </div>
                         ))}

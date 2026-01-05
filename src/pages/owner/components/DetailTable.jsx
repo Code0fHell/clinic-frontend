@@ -23,9 +23,10 @@ const DetailTable = ({ data, isLoading, error }) => {
                 </div>
             </div>
             <div className="mt-4 overflow-hidden rounded-xl border border-slate-100">
-                <div className="grid grid-cols-4 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <div className="grid grid-cols-5 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
                     <span>Mốc</span>
-                    <span className="text-right">Khám bệnh</span>
+                    <span className="text-right">Lâm sàng</span>
+                    <span className="text-right">Cận lâm sàng</span>
                     <span className="text-right">Bán thuốc</span>
                     <span className="text-right">Lượt khám</span>
                 </div>
@@ -40,10 +41,11 @@ const DetailTable = ({ data, isLoading, error }) => {
                 ) : (
                     <>
                         <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto">
-                            {currentData.map((item) => (
-                                <div key={item.label} className="grid grid-cols-4 px-4 py-3 text-sm text-slate-700">
-                                    <span className="font-medium">{item.label}</span>
+                            {currentData.map((item, index) => (
+                                <div key={`${item.label}-${startIndex + index}`} className="grid grid-cols-5 px-4 py-3 text-sm text-slate-700">
+                                    <span className="font-medium text-left">{item.label}</span>
                                     <span className="text-right">{formatCurrency(item.revenueClinic)}</span>
+                                    <span className="text-right">{formatCurrency(item.revenueService)}</span>
                                     <span className="text-right">{formatCurrency(item.revenuePharma)}</span>
                                     <span className="text-right">{item.visits.toLocaleString("vi-VN")}</span>
                                 </div>

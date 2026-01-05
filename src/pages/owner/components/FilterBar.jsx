@@ -10,7 +10,7 @@ const FilterBar = ({
     timeframe,
     onTimeframeChange,
     onPreset,
-    onExportPDF,
+    onExportExcel,
     onManualDateChange,
 }) => (
     <Card>
@@ -64,10 +64,10 @@ const FilterBar = ({
                     ))}
                     <div className="mx-2 h-6 w-px bg-slate-200" />
                     <button
-                        onClick={onExportPDF}
+                        onClick={onExportExcel}
                         className="hover:cursor-pointer rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
                     >
-                        Xuất PDF doanh thu
+                        Xuất Excel doanh thu
                     </button>
                 </div>
             </div>

@@ -19,7 +19,7 @@ const BreakdownCard = ({ data }) => (
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-500">
                         <span>{row.visits.toLocaleString("vi-VN")} lượt</span>
-                        <span>{idx === 0 ? "Lâm sàng" : idx === 1 ? "Dịch vụ" : "Thuốc"}</span>
+                        <span>{idx === 0 ? "Lâm sàng" : idx === 1 ? "Cận lâm sàng" : "Thuốc"}</span>
                     </div>
                     <ProgressBar value={Math.min((row.revenue / data[0].revenue) * 100, 100)} />
                 </div>

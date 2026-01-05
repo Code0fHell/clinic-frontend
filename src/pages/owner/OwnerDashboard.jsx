@@ -9,20 +9,83 @@ import SideBar from "./components/SideBar";
 import Header from "./components/Header";
 import { Card, SkeletonBlock, StatCard } from "./components/ui";
 import { TIMEFRAMES, formatCurrency } from "./ownerConstants";
-import { getRevenue, getRevenueService_Breakdown } from "../../api/owner.api";
+import { exportRevenueExcel, getRevenue, getRevenueService_Breakdown } from "../../api/owner.api";
+
+// Hàm sắp xếp dữ liệu theo timeframe (mới nhất trước)
+const sortByTimeframe = (labelA, labelB, timeframe) => {
+    try {
+        switch (timeframe) {
+            case "DAY": {
+                const parseDate = (label) => {
+                    const [day, month, year] = label.split('/');
+                    return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+                };
+                const dateA = parseDate(labelA);
+                const dateB = parseDate(labelB);
+                return dateB - dateA; // Mới nhất trước (giảm dần)
+            }
+            case "WEEK": {
+                const getWeekNumber = (label) => {
+                    const match = label.match(/Tuần (\d+)/);
+                    return match ? parseInt(match[1], 10) : 0;
+                };
+                return getWeekNumber(labelB) - getWeekNumber(labelA); // Mới nhất trước
+            }
+            case "MONTH": {
+                const parseMonth = (label) => {
+                    const match = label.match(/T(\d+)\/(\d+)/);
+                    if (match) {
+                        const month = parseInt(match[1], 10);
+                        const year = parseInt(match[2], 10);
+                        return year * 12 + month;
+                    }
+                    return 0;
+                };
+                return parseMonth(labelB) - parseMonth(labelA); // Mới nhất trước
+            }
+            case "QUARTER": {
+                const parseQuarter = (label) => {
+                    const match = label.match(/Q(\d+)\/(\d+)/);
+                    if (match) {
+                        const quarter = parseInt(match[1], 10);
+                        const year = parseInt(match[2], 10);
+                        return year * 4 + quarter;
+                    }
+                    return 0;
+                };
+                return parseQuarter(labelB) - parseQuarter(labelA); // Mới nhất trước
+            }
+            default:
+                return 0;
+        }
+    } catch (error) {
+        console.warn("Lỗi khi sắp xếp dữ liệu:", error);
+        return 0;
+    }
+};
 
 const OwnerDashboard = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const today = new Date();
-    const fmt = (d) => d.toISOString().slice(0, 10);
+    const todayVN = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })
+    );
+    const fmt = (d) =>
+        new Date(d).toLocaleDateString("en-CA", {
+            timeZone: "Asia/Ho_Chi_Minh",
+        });
 
     const initialTf = searchParams.get("tf");
     const safeTf = TIMEFRAMES.some((t) => t.key === initialTf) ? initialTf : "DAY";
-    // const defaultStart = fmt(new Date(today.getTime() - 6 * 86400000));
-    const defaultStart = fmt(today);
-    const defaultEnd = fmt(today);
-    const [startDate, setStartDate] = useState(searchParams.get("start") ?? defaultStart);
-    const [endDate, setEndDate] = useState(searchParams.get("end") ?? defaultEnd);
+
+    const defaultStart = fmt(todayVN);
+    const defaultEnd = fmt(todayVN);
+
+    const [startDate, setStartDate] = useState(
+        searchParams.get("start") ?? defaultStart
+    );
+    const [endDate, setEndDate] = useState(
+        searchParams.get("end") ?? defaultEnd
+    );
     const [timeframe, setTimeframe] = useState(safeTf);
     const [data, setData] = useState([]);
     const [dataServiceBreakdown, setDataServiceBreakdown] = useState([]);
@@ -98,8 +161,48 @@ const OwnerDashboard = () => {
                     timeframe
                 });
 
-                setData(result || []);
+                // Đảm bảo result là mảng hợp lệ
+                if (Array.isArray(result)) {
+                    // Nếu mảng rỗng và timeframe là DAY, tạo một entry mặc định để hiển thị
+                    if (result.length === 0 && timeframe === "DAY") {
+                        const formattedDate = new Date(startDate).toLocaleDateString('vi-VN');
+                        setData([{
+                            label: formattedDate,
+                            revenueClinic: 0,
+                            revenueService: 0,
+                            revenuePharma: 0,
+                            visits: 0
+                        }]);
+                    } else {
+                        // Gộp các entries có cùng label lại với nhau
+                        const mergedData = result.reduce((acc, item) => {
+                            const existing = acc.find(d => d.label === item.label);
+                            if (existing) {
+                                // Gộp dữ liệu nếu đã tồn tại label
+                                existing.revenueClinic += item.revenueClinic || 0;
+                                existing.revenueService += item.revenueService || 0;
+                                existing.revenuePharma += item.revenuePharma || 0;
+                                existing.visits += item.visits || 0;
+                            } else {
+                                // Thêm entry mới
+                                acc.push({ ...item });
+                            }
+                            return acc;
+                        }, []);
+
+                        // Sắp xếp dữ liệu: mới nhất trước (giảm dần)
+                        const sortedData = mergedData.sort((a, b) => {
+                            return sortByTimeframe(a.label, b.label, timeframe);
+                        });
+
+                        setData(sortedData);
+                    }
+                } else {
+                    console.warn("API trả về dữ liệu không hợp lệ:", result);
+                    setData([]);
+                }
             } catch (e) {
+                console.error("Lỗi khi gọi API getRevenue:", e);
                 setError("Không thể tải dữ liệu doanh thu");
                 setData([]);
             } finally {
@@ -130,23 +233,31 @@ const OwnerDashboard = () => {
 
     const totals = useMemo(() => {
         const clinic = data.reduce((sum, d) => sum + d.revenueClinic, 0);
+        const service = data.reduce((sum, d) => sum + d.revenueService, 0);
         const pharma = data.reduce((sum, d) => sum + d.revenuePharma, 0);
         const visits = data.reduce((sum, d) => sum + d.visits, 0);
-        return { clinic, pharma, total: clinic + pharma, visits };
+
+        return {
+            clinic,
+            service,
+            pharma,
+            total: clinic + service + pharma,
+            visits
+        };
     }, [data]);
 
     const handlePreset = (key) => {
         setIsManualDateChange(false);
-        const end = fmt(today);
+        const end = fmt(todayVN);
         let start = end;
         if (key === "7d") {
-            start = fmt(new Date(today.getTime() - 6 * 86400000));
+            start = fmt(new Date(todayVN.getTime() - 6 * 86400000));
             setTimeframe("DAY");
         } else if (key === "30d") {
-            start = fmt(new Date(today.getTime() - 29 * 86400000));
+            start = fmt(new Date(todayVN.getTime() - 29 * 86400000));
             setTimeframe("DAY");
         } else {
-            start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()));
+            start = fmt(new Date(todayVN.getFullYear(), todayVN.getMonth() - 2, todayVN.getDate()));
             setTimeframe("QUARTER");
         }
         setStartDate(start);
@@ -158,8 +269,13 @@ const OwnerDashboard = () => {
         setTimeframe(tf);
     };
 
-    const handleExportPDF = () => {
-        setToast("Đã xuất báo cáo PDF");
+    const handleExportExcel = async () => {
+        await exportRevenueExcel({
+            startDate: startDate,   // state FE
+            endDate: endDate,
+            timeframe: timeframe,
+        });
+        setToast("Đã xuất báo cáo Excel");
         setTimeout(() => setToast(""), 1500);
     };
 
@@ -189,7 +305,7 @@ const OwnerDashboard = () => {
                                 timeframe={timeframe}
                                 onTimeframeChange={handleTimeframeChange}
                                 onPreset={handlePreset}
-                                onExportPDF={handleExportPDF}
+                                onExportExcel={handleExportExcel}
                                 onManualDateChange={() => setIsManualDateChange(true)}
                             />
 
@@ -209,9 +325,10 @@ const OwnerDashboard = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <StatCard title="Doanh thu khám bệnh" value={formatCurrency(totals.clinic)} subtitle={`${startDate} → ${endDate}`} />
-                                        <StatCard title="Doanh thu bán thuốc" value={formatCurrency(totals.pharma)} subtitle={`${startDate} → ${endDate}`} />
-                                        <StatCard title="Tổng doanh thu" value={formatCurrency(totals.total)} subtitle="Khám + thuốc" />
+                                        <StatCard title="Lâm sàng" value={formatCurrency(totals.clinic)} subtitle={`${startDate} → ${endDate}`} />
+                                        <StatCard title="Cận lâm sàng" value={formatCurrency(totals.service)} subtitle={`${startDate} → ${endDate}`} />
+                                        <StatCard title="Bán thuốc" value={formatCurrency(totals.pharma)} subtitle={`${startDate} → ${endDate}`} />
+                                        <StatCard title="Tổng doanh thu" value={formatCurrency(totals.total)} subtitle="Lâm sàng + Cận lâm sàng + thuốc" />
                                         <StatCard title="Lượt thăm khám" value={totals.visits.toLocaleString("vi-VN")} subtitle="Theo khoảng đã lọc" />
                                     </>
                                 )}
@@ -226,7 +343,8 @@ const OwnerDashboard = () => {
                                                 {/* <p className="text-lg font-semibold text-slate-900">Khám bệnh vs Bán thuốc</p> */}
                                             </div>
                                             <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
-                                                <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-teal-500" /> Khám</span>
+                                                <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-teal-500" /> Lâm sàng</span>
+                                                <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-purple-500" /> Cận lâm sàng</span>
                                                 <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-indigo-500" /> Thuốc</span>
                                             </div>
                                         </div>
@@ -254,7 +372,7 @@ const OwnerDashboard = () => {
 
                             <DetailTable data={data} isLoading={isLoading} error={error} />
 
-                            <div className="grid lg:grid-cobs-2">
+                            <div className="grid lg:grid-cols-2">
                                 <div className="lg:col-span-2 mb-6">
                                     <BreakdownCard data={dataServiceBreakdown} />
                                 </div>
