@@ -37,3 +37,15 @@ export const deleteMedicine = async (id) => {
   const res = await axiosClient.delete(`/medicine/${id}`);
   return res.data;
 };
+
+// Upload ảnh thuốc
+export const uploadMedicineImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await axiosClient.post("/medicine/upload-image", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};

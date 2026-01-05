@@ -59,7 +59,7 @@ export default function PharmacistHeader() {
                 {user ? (
                     <div className="flex items-center gap-4">
                         <div className="text-gray-700 font-medium">
-                            👋 Xin chào, <span className="text-xl text-blue-600 font-bold">{user.full_name || user.username}</span>
+                            Xin chào, <span className="text-xl text-blue-600 font-bold">{user.full_name || user.username}</span>
                         </div>
                         <button
                             onClick={handleLogout}

@@ -28,6 +28,7 @@ import PharmacistDashboard from "./pages/pharmacist/Dashboard";
 import PharmacistMedicines from "./pages/pharmacist/Medicines";
 import PharmacistSchedule from "./pages/pharmacist/Schedule";
 import PharmacistPrescriptions from "./pages/pharmacist/Prescriptions";
+import PharmacistPrescriptionInvoices from "./pages/pharmacist/PrescriptionInvoices";
 import PrivateRoute from "./routes/PrivateRoute";
 import AccountInfoPage from "./pages/profile/AccountInfoPage";
 import MedicalRecordsPage from "./pages/profile/MedicalRecordsPage";
@@ -157,6 +158,10 @@ function App() {
                         <Route
                             path="/pharmacist/prescriptions"
                             element={<PharmacistPrescriptions />}
+                        />
+                        <Route
+                            path="/pharmacist/invoices"
+                            element={<PharmacistPrescriptionInvoices />}
                         />
                         <Route
                             path="/pharmacist/medicines"

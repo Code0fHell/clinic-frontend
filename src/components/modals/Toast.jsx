@@ -9,11 +9,11 @@ import React, { useEffect } from "react";
  * @param {'success'|'error'|'info'|'warn'} [props.type='success'] - Type of toast.
  */
 const Toast = ({ message, onClose, duration = 3500, type = "success" }) => {
-  useEffect(() => {
-    if (!duration) return;
-    const timer = setTimeout(onClose, duration);
-    return () => clearTimeout(timer);
-  }, [onClose, duration]);
+    useEffect(() => {
+        if (!duration) return;
+        const timer = setTimeout(onClose, duration);
+        return () => clearTimeout(timer);
+    }, [onClose, duration]);
 
   let bgColor = "bg-green-600";
   if (type === "error") bgColor = "bg-red-600";

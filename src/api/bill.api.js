@@ -61,6 +61,16 @@ export const getDetailBill = async (billId) => {
     }
 }
 
+// Lấy danh sách hóa đơn thuốc với filters (cho dược sĩ)
+export const getPrescriptionBills = async (params) => {
+    try {
+        const res = await axiosClient.get("/bill/prescription/list", { params });
+        return res.data;
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách hóa đơn thuốc: ', error.response?.data || error.message);
+        throw error;
+    }
+}
 // Đếm số bill
 export const getCountBillToday = async () => {
     const res = await axiosClient.get('/bill/dashboard/count');

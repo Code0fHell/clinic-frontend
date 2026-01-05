@@ -53,3 +53,9 @@ export const getPharmacistRecentActivity = async () => {
   const res = await axiosClient.get("/prescription/pharmacist/recent-activity");
   return res.data;
 };
+
+// Điều chỉnh đơn thuốc (cho dược sĩ)
+export const adjustPrescription = async (id, dto) => {
+  const res = await axiosClient.put(`/prescription/${id}/adjust`, dto);
+  return res.data;
+};
