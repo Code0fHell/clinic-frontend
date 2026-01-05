@@ -143,6 +143,10 @@ const StaffLoginPage = () => {
           >
             Đăng nhập
           </button>
+          <div className="mt-6 text-center">
+              <span>Bạn không phải nhân viên?</span>
+              <Link to="/patient/login" className="ml-2 px-4 py-2 border rounded text-blue-600 hover:bg-blue-50">Đăng nhập với tư cách bệnh nhân</Link>
+          </div>
         </form>
       </div>
     </div>

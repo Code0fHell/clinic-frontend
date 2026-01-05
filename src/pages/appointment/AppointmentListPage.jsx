@@ -37,17 +37,6 @@ const ViewToggle = ({ view, onViewChange }) => (
             <i className="fas fa-table mr-2"></i>
             Dạng bảng
         </button>
-        <button
-            onClick={() => onViewChange("calendar")}
-            className={`px-6 py-2 rounded-lg font-medium transition ${
-                view === "calendar"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400"
-            }`}
-        >
-            <i className="fas fa-calendar-alt mr-2"></i>
-            Dạng lịch
-        </button>
     </div>
 );
 
@@ -471,7 +460,6 @@ const AppointmentListPage = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [dateFilter, setDateFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const [calendarDate, setCalendarDate] = useState(dayjs());
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({
         show: false,
@@ -603,25 +591,6 @@ const AppointmentListPage = () => {
                                     currentPage={currentPage}
                                     itemsPerPage={itemsPerPage}
                                     onPageChange={setCurrentPage}
-                                />
-                            )}
-                        </>
-                    )}
-
-                    {view === "calendar" && (
-                        <>
-                            {loading ? (
-                                <div className="text-center py-12">
-                                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                                    <p className="mt-4 text-gray-600">
-                                        Đang tải...
-                                    </p>
-                                </div>
-                            ) : (
-                                <AppointmentCalendar
-                                    appointments={filteredAppointments}
-                                    currentDate={calendarDate}
-                                    onDateChange={setCalendarDate}
                                 />
                             )}
                         </>
