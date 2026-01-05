@@ -12,10 +12,17 @@ const DualBarChart = ({ data, isLoading, error }) => {
         labels: data.map((item) => item.label),
         datasets: [
             {
-                label: "Khám bệnh",
+                label: "Lâm sàng",
                 data: data.map((item) => item.revenueClinic / 1_000_000),
                 backgroundColor: "rgba(20, 184, 166, 0.8)",
                 borderColor: "rgba(20, 184, 166, 1)",
+                borderWidth: 1,
+            },
+            {
+                label: "Cận lâm sàng",
+                data: data.map(d => d.revenueService / 1_000_000),
+                backgroundColor: "rgba(168, 85, 247, 0.8)",
+                borderColor: "rgba(168, 85, 247, 1)",
                 borderWidth: 1,
             },
             {
