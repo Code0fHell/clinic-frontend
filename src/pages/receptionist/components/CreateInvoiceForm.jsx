@@ -23,7 +23,7 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
 
     useEffect(() => {
         if (visit) {
-            console.log("DEBUG: visit object:", visit);
+            // console.log("DEBUG: visit object:", visit);
 
             // Xác định loại hóa đơn mặc định dựa trên dữ liệu có sẵn
             let defaultBillType = "CLINICAL";
@@ -130,8 +130,8 @@ export default function CreateInvoiceForm({ visit, onSubmit, onClose }) {
             total: totalAmount
         };
 
-        console.log("Payload gửi BE:", payload);
-        console.log("Total type:", typeof payload.total, "Value:", payload.total);
+        // console.log("Payload gửi BE:", payload);
+        // console.log("Total type:", typeof payload.total, "Value:", payload.total);
         onSubmit?.(payload);
     };
 

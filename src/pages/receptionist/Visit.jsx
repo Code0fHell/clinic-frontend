@@ -542,7 +542,7 @@ export default function Visit() {
             case true:
                 return "Đã đặt lịch";
             case false:
-                return "Chưa đặt lịch";
+                return "Không đặt lịch";
             default:
                 return "Không xác định";
         }

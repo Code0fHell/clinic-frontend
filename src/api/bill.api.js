@@ -60,3 +60,39 @@ export const getDetailBill = async (billId) => {
         throw error;
     }
 }
+
+// Đếm số bill
+export const getCountBillToday = async () => {
+    const res = await axiosClient.get('/bill/dashboard/count');
+    return res.data;
+}
+
+// Danh sách bệnh nhân đã thanh toán (dashboard lễ tân)
+export const getPaymentReport = async ({ cursor = null, limit = 10 } = {}) => {
+    try {
+        const params = { limit };
+
+        // chỉ gửi cursor khi có (load lần 2 trở đi)
+        if (cursor) {
+            params.cursor = cursor;
+        }
+
+        const res = await axiosClient.get("/bill/dashboard/payment-report", { params });
+
+        return res.data;
+        // { data: [], meta: { limit, hasMore, nextCursor } }
+    } catch (err) {
+        console.error(
+            "Lỗi khi lấy danh sách bill:",
+            err.response?.data || err.message
+        );
+        return {
+            data: [],
+            meta: {
+                limit,
+                hasMore: false,
+                nextCursor: null,
+            },
+        };
+    }
+}

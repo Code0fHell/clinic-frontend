@@ -13,7 +13,6 @@ import {
     subMonths,
 } from "date-fns";
 
-// Rút gọn: T.2, T.3, ..., CN
 const SHORT_DAYS = ["T.2", "T.3", "T.4", "T.5", "T.6", "T.7", "CN"];
 const VIETNAMESE_MONTHS = [
     "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
@@ -73,7 +72,7 @@ export default function CalendarCard() {
     return (
         <div className="bg-white rounded-2xl shadow-sm p-3 max-h-[260px]">
             <div className="flex justify-between items-center mb-3 px-2">
-                <h2 className="text-lg font-bold text-gray-800">{monthYear}</h2>
+                <h2 className="text-[17px] font-bold text-gray-800">{monthYear}</h2>
 
                 <div className="flex space-x-1">
                     <button

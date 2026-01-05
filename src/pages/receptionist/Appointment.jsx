@@ -399,30 +399,38 @@ export default function Appointment() {
 
                                                             {/* Thao tác */}
                                                             <td className="w-[180px] px-3 py-2">
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setSelectedAppointment({
-                                                                            ...item,
-                                                                            patient_name:
-                                                                                item.patient?.name || "Không rõ",
-                                                                            doctor_name:
-                                                                                item.doctor?.name || "Không rõ",
-                                                                            patient_id: item.patient?.id,
-                                                                            doctor_id: item.doctor?.id,
-                                                                            appointment_id: item.id,
-                                                                            is_available: item.doctor?.is_available
-                                                                        })
-                                                                    }
-                                                                    disabled={item.status !== "PENDING"}
-                                                                    className={`
-                                                hover: cursor-pointer w-full px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition
-                                                ${item.status !== "PENDING"
-                                                                            ? "bg-gray-400 text-white cursor-not-allowed"
-                                                                            : "bg-[#008080] text-white hover:bg-teal-600"}
-                                            `}
-                                                                >
-                                                                    Thêm vào thăm khám
-                                                                </button>
+                                                                {item.status === "CANCELLED" ? (
+                                                                    <span
+                                                                        className="inline-block w-full text-center px-3 py-2
+                       rounded-lg text-sm font-semibold
+                       bg-red-100 text-red-600 cursor-not-allowed"
+                                                                    >
+                                                                        Đã hủy
+                                                                    </span>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setSelectedAppointment({
+                                                                                ...item,
+                                                                                patient_name: item.patient?.name || "Không rõ",
+                                                                                doctor_name: item.doctor?.name || "Không rõ",
+                                                                                patient_id: item.patient?.id,
+                                                                                doctor_id: item.doctor?.id,
+                                                                                appointment_id: item.id,
+                                                                                is_available: item.doctor?.is_available
+                                                                            })
+                                                                        }
+                                                                        disabled={item.status !== "PENDING"}
+                                                                        className={`
+                w-full px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition
+                ${item.status !== "PENDING"
+                                                                                ? "bg-gray-400 text-white cursor-not-allowed"
+                                                                                : "bg-[#008080] text-white hover:bg-teal-600 cursor-pointer"}
+            `}
+                                                                    >
+                                                                        Thêm vào thăm khám
+                                                                    </button>
+                                                                )}
                                                             </td>
                                                         </tr>
                                                     ))
