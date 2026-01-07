@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import Header from "./components/Header";
 import SideBar from "./components/SideBar";
 import { Card, Button, LoadingSpinner, EmptyState, Badge } from "./components/ui";
+import Toast from "../../components/modals/Toast";
 import {
   getStaffWeeklySchedule,
   copyFromPreviousWeek,
@@ -19,7 +20,7 @@ const StaffWeeklyScheduleDetail = () => {
   const [selectedStaffId, setSelectedStaffId] = useState(searchParams.get("staff_id") || "");
   const [selectedDate, setSelectedDate] = useState(searchParams.get("date") || "");
   const [currentWeek, setCurrentWeek] = useState(null);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchAllStaff();
@@ -59,7 +60,7 @@ const StaffWeeklyScheduleDetail = () => {
       setScheduleData(response);
     } catch (error) {
       console.error("Error fetching staff weekly schedule:", error);
-      showToast("Lỗi khi tải lịch làm việc!");
+      showToast("Lỗi khi tải lịch làm việc!", "error");
     } finally {
       setLoading(false);
     }
@@ -97,7 +98,7 @@ const StaffWeeklyScheduleDetail = () => {
       fetchStaffWeeklySchedule();
     } catch (error) {
       console.error("Error copying schedule:", error);
-      showToast(error.response?.data?.message || "Lỗi khi sao chép lịch!");
+      showToast(error.response?.data?.message || "Lỗi khi sao chép lịch!", "error");
     }
   };
 
@@ -113,13 +114,12 @@ const StaffWeeklyScheduleDetail = () => {
       fetchStaffWeeklySchedule();
     } catch (error) {
       console.error("Error deleting schedule:", error);
-      showToast(error.response?.data?.message || "Lỗi khi xóa lịch!");
+      showToast(error.response?.data?.message || "Lỗi khi xóa lịch!", "error");
     }
   };
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 3000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const previousWeek = () => {
@@ -141,13 +141,9 @@ const StaffWeeklyScheduleDetail = () => {
   };
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("vi-VN", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
   };
 
   const getDayOfWeek = (offset) => {
@@ -208,12 +204,7 @@ const StaffWeeklyScheduleDetail = () => {
                 </div>
               </div>
 
-              {/* Toast */}
-              {toast && (
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
-                  {toast}
-                </div>
-              )}
+              {/* Toast removed from inline position - now floating */}
 
               {/* Staff Selector & Week Picker */}
               <Card>
@@ -246,7 +237,7 @@ const StaffWeeklyScheduleDetail = () => {
                       </Button>
                       <div className="flex-1 text-center">
                         <span className="text-lg font-semibold text-slate-700">
-                          {currentWeek.start} → {currentWeek.end}
+                          {formatDate(currentWeek.start)} → {formatDate(currentWeek.end)}
                         </span>
                       </div>
                       <Button onClick={nextWeek} variant="secondary">
@@ -256,6 +247,40 @@ const StaffWeeklyScheduleDetail = () => {
                   )}
                 </div>
               </Card>
+
+              {/* Staff Info Summary */}
+              {scheduleData && (
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-slate-800">
+                        {scheduleData.staff.full_name}
+                      </h3>
+                      <div className="flex gap-3 mt-2">
+                        <Badge variant="info">{scheduleData.staff.department || "N/A"}</Badge>
+                        <Badge variant="default">{scheduleData.staff.position || "N/A"}</Badge>
+                        {scheduleData.staff.doctor_type && (
+                          <Badge variant="success">
+                            {scheduleData.staff.doctor_type === "CLINICAL"
+                              ? "Lâm sàng"
+                              : scheduleData.staff.doctor_type === "DIAGNOSTIC"
+                              ? "Chẩn đoán"
+                              : "Xét nghiệm"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-700">
+                        {scheduleData.schedules.length}/7
+                      </div>
+                      <div className="text-xs text-slate-600 mt-1">
+                        Ngày làm việc trong tuần
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )}
 
               {/* Weekly Calendar View */}
               {loading ? (
@@ -292,7 +317,7 @@ const StaffWeeklyScheduleDetail = () => {
                             {dayName}
                           </div>
                           <div className="text-xs text-slate-500 mt-1">
-                            {dayDate.split("-").slice(1).join("/")}
+                            {formatDate(dayDate)}
                           </div>
                         </div>
 
@@ -370,44 +395,19 @@ const StaffWeeklyScheduleDetail = () => {
                   })}
                 </div>
               )}
-
-              {/* Staff Info Summary */}
-              {scheduleData && (
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-slate-800">
-                        {scheduleData.staff.full_name}
-                      </h3>
-                      <div className="flex gap-3 mt-2">
-                        <Badge variant="info">{scheduleData.staff.department || "N/A"}</Badge>
-                        <Badge variant="default">{scheduleData.staff.position || "N/A"}</Badge>
-                        {scheduleData.staff.doctor_type && (
-                          <Badge variant="success">
-                            {scheduleData.staff.doctor_type === "CLINICAL"
-                              ? "Lâm sàng"
-                              : scheduleData.staff.doctor_type === "DIAGNOSTIC"
-                              ? "Chẩn đoán"
-                              : "Xét nghiệm"}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-700">
-                        {scheduleData.schedules.length}/7
-                      </div>
-                      <div className="text-xs text-slate-600 mt-1">
-                        Ngày làm việc trong tuần
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              )}
             </div>
           </div>
         </main>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

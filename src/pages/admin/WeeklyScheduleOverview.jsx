@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "./components/Header";
 import SideBar from "./components/SideBar";
 import { Card, Button, LoadingSpinner, EmptyState } from "./components/ui";
+import Toast from "../../components/modals/Toast";
 import { getWeeklySchedule } from "../../api/work-schedule.api";
 import { getAllStaff } from "../../api/staff.api";
 
@@ -16,7 +17,7 @@ const WeeklyScheduleOverview = () => {
     doctor_type: "",
   });
   const [currentWeek, setCurrentWeek] = useState(getWeekDates(new Date()));
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchAllStaff();
@@ -48,7 +49,7 @@ const WeeklyScheduleOverview = () => {
       setScheduleData(response);
     } catch (error) {
       console.error("Error fetching weekly schedule:", error);
-      showToast("Lỗi khi tải lịch làm việc!");
+      showToast("Lỗi khi tải lịch làm việc!", "error");
     } finally {
       setLoading(false);
     }
@@ -87,9 +88,8 @@ const WeeklyScheduleOverview = () => {
     navigate(`/admin/work-schedule/staff-detail?staff_id=${staffId}&date=${dayDate}`);
   };
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 3000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const previousWeek = () => {
@@ -108,6 +108,12 @@ const WeeklyScheduleOverview = () => {
     if (!dateTimeStr) return "";
     const date = new Date(dateTimeStr);
     return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
   };
 
   // Merge staff from schedule data and all staff to ensure everyone is shown
@@ -173,12 +179,7 @@ const WeeklyScheduleOverview = () => {
                 </Button>
               </div>
 
-              {/* Toast */}
-              {toast && (
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
-                  {toast}
-                </div>
-              )}
+              {/* Toast removed from inline position - now floating */}
 
               {/* Filters */}
               <Card>
@@ -190,7 +191,7 @@ const WeeklyScheduleOverview = () => {
                     </Button>
                     <div className="flex-1 text-center">
                       <span className="text-lg font-semibold text-slate-700">
-                        {currentWeek.start} → {currentWeek.end}
+                        {formatDate(currentWeek.start)} → {formatDate(currentWeek.end)}
                       </span>
                     </div>
                     <Button onClick={nextWeek} variant="secondary">
@@ -260,7 +261,7 @@ const WeeklyScheduleOverview = () => {
                             >
                               <div>{day}</div>
                               <div className="text-xs font-normal text-slate-500 mt-1">
-                                {getDayOfWeek(index).split("-").slice(1).join("/")}
+                                {formatDate(getDayOfWeek(index))}
                               </div>
                             </th>
                           ))}
@@ -320,6 +321,15 @@ const WeeklyScheduleOverview = () => {
           </div>
         </main>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
