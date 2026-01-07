@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Header from "./components/Header";
 import SideBar from "./components/SideBar";
 import { Card, Button, Badge, LoadingSpinner, EmptyState } from "./components/ui";
+import Toast from "../../components/modals/Toast";
 import {
   getStaffPaginated,
   deleteStaff,
@@ -30,7 +31,7 @@ const ManageStaff = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchStaff();
@@ -55,7 +56,7 @@ const ManageStaff = () => {
       });
     } catch (error) {
       console.error("Error fetching staff:", error);
-      showToast("Lỗi khi tải danh sách nhân viên!");
+      showToast("Lỗi khi tải danh sách nhân viên!", "error");
     } finally {
       setLoading(false);
     }
@@ -75,7 +76,7 @@ const ManageStaff = () => {
     } catch (error) {
       console.error("Error deleting staff:", error);
       const errorMsg = error.response?.data?.message || "Lỗi khi xóa nhân viên!";
-      showToast(errorMsg);
+      showToast(errorMsg, "error");
       // Luôn refresh lại danh sách để cập nhật trạng thái
       setTimeout(() => fetchStaff(), 1500);
     }
@@ -111,9 +112,8 @@ const ManageStaff = () => {
     setShowEditModal(true);
   };
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 3000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const handleRoleFilter = (role) => {
@@ -178,12 +178,7 @@ const ManageStaff = () => {
                 </Button>
               </div>
 
-              {/* Toast */}
-              {toast && (
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
-                  {toast}
-                </div>
-              )}
+              {/* Toast removed from inline position - now floating */}
 
               {/* Filters */}
               <Card>
@@ -393,6 +388,15 @@ const ManageStaff = () => {
             setSelectedStaff(null);
           }}
           onSubmit={handleUpdateStaff}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Header from "./components/Header";
 import SideBar from "./components/SideBar";
 import { Card, Button, Badge, LoadingSpinner, EmptyState } from "./components/ui";
+import Toast from "../../components/modals/Toast";
 import { getAllUsers, deleteUser, createPatientAccount } from "../../api/user.api";
 import { createStaff } from "../../api/staff.api";
 import CreatePatientModal from "./components/CreatePatientModal";
@@ -23,7 +24,7 @@ const ManageAccounts = () => {
   });
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -46,7 +47,7 @@ const ManageAccounts = () => {
       });
     } catch (error) {
       console.error("Error fetching users:", error);
-      showToast("Lỗi khi tải danh sách tài khoản!");
+      showToast("Lỗi khi tải danh sách tài khoản!", "error");
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ const ManageAccounts = () => {
       fetchUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
-      showToast(error.response?.data?.message || "Lỗi khi xóa tài khoản!");
+      showToast(error.response?.data?.message || "Lỗi khi xóa tài khoản!", "error");
     }
   };
 
@@ -91,9 +92,8 @@ const ManageAccounts = () => {
     }
   };
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 3000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const handleRoleFilter = (role) => {
@@ -157,12 +157,7 @@ const ManageAccounts = () => {
                 </div>
               </div>
 
-              {/* Toast */}
-              {toast && (
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
-                  {toast}
-                </div>
-              )}
+              {/* Toast removed from inline position - now floating */}
 
               {/* Filters */}
               <Card>
@@ -319,6 +314,15 @@ const ManageAccounts = () => {
         <CreateStaffModal
           onClose={() => setShowStaffModal(false)}
           onSubmit={handleCreateStaff}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "./components/Header";
 import SideBar from "./components/SideBar";
 import { Card, Button, LoadingSpinner } from "./components/ui";
+import Toast from "../../components/modals/Toast";
 import { createWeeklySchedule } from "../../api/work-schedule.api";
 import { getAllStaff } from "../../api/staff.api";
 
@@ -11,8 +12,17 @@ const CreateWorkSchedule = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [allStaff, setAllStaff] = useState([]);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Lấy ngày thứ 2 của tuần hiện tại làm ngày mặc định
+  const getDefaultWeekStart = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diff));
+    return monday.toISOString().split('T')[0];
+  };
 
   const [formData, setFormData] = useState({
     staff_id: searchParams.get("staff_id") || "",
@@ -20,6 +30,7 @@ const CreateWorkSchedule = () => {
     start_time: "08:00",
     end_time: "17:00",
     slot_duration: 30,
+    week_start: getDefaultWeekStart(), // Ngày thứ 2 của tuần hiện tại
   });
 
   useEffect(() => {
@@ -103,8 +114,7 @@ const CreateWorkSchedule = () => {
     try {
       setLoading(true);
 
-      // Calculate the dates for selected days of the week
-      const currentWeek = getCurrentWeekDates();
+      // Calculate the dates for selected days of the week based on selected week_start
       const dayMapping = {
         monday: 0,
         tuesday: 1,
@@ -117,7 +127,7 @@ const CreateWorkSchedule = () => {
 
       const working_dates = formData.working_days.map((day) => {
         const offset = dayMapping[day];
-        const date = new Date(currentWeek.monday);
+        const date = new Date(formData.week_start);
         date.setDate(date.getDate() + offset);
         return date.toISOString().split("T")[0];
       });
@@ -143,17 +153,46 @@ const CreateWorkSchedule = () => {
     }
   };
 
-  function getCurrentWeekDates() {
-    const curr = new Date();
-    const day = curr.getDay();
-    const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(curr.setDate(diff));
-    return { monday };
-  }
+  // Lấy ngày thực tế cho mỗi ngày làm việc trong tuần đã chọn
+  const getDateForDay = (dayId) => {
+    const dayMapping = {
+      monday: 0,
+      tuesday: 1,
+      wednesday: 2,
+      thursday: 3,
+      friday: 4,
+      saturday: 5,
+      sunday: 6,
+    };
+    
+    if (!formData.week_start) return null;
+    
+    const offset = dayMapping[dayId];
+    const date = new Date(formData.week_start);
+    date.setDate(date.getDate() + offset);
+    return date;
+  };
+
+  // Format ngày để hiển thị
+  const formatDate = (date) => {
+    if (!date) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  // Lấy khoảng ngày hiển thị của tuần đã chọn
+  const getWeekRangeDisplay = () => {
+    if (!formData.week_start) return '';
+    const monday = new Date(formData.week_start);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    return `${formatDate(monday)} - ${formatDate(sunday)}`;
+  };
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
-    setTimeout(() => setToast(""), 3000);
   };
 
   const weekDays = [
@@ -236,18 +275,7 @@ const CreateWorkSchedule = () => {
                 </Button>
               </div>
 
-              {/* Toast */}
-              {toast && (
-                <div
-                  className={`rounded-xl border px-4 py-3 text-sm shadow-sm ${
-                    toast.type === "error"
-                      ? "border-red-100 bg-red-50 text-red-700"
-                      : "border-emerald-100 bg-emerald-50 text-emerald-700"
-                  }`}
-                >
-                  {toast.message}
-                </div>
-              )}
+              {/* Toast removed from inline position - now floating */}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Staff Selection */}
@@ -281,26 +309,81 @@ const CreateWorkSchedule = () => {
                   </div>
                 </Card>
 
+                {/* Week Selection */}
+                <Card>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    2. Chọn tuần làm việc
+                  </h3>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Tuần bắt đầu từ (Thứ 2) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.week_start}
+                      onChange={(e) => {
+                        const selectedDate = new Date(e.target.value);
+                        const dayOfWeek = selectedDate.getDay();
+                        
+                        // Auto adjust to Monday if not Monday
+                        if (dayOfWeek !== 1) {
+                          const diff = selectedDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                          const monday = new Date(selectedDate.setDate(diff));
+                          setFormData({ 
+                            ...formData, 
+                            week_start: monday.toISOString().split('T')[0]
+                          });
+                          showToast("Đã tự động điều chỉnh về ngày Thứ 2 của tuần", "info");
+                        } else {
+                          setFormData({ ...formData, week_start: e.target.value });
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <div className="mt-2 flex items-center gap-2">
+                      <p className="text-xs text-slate-500">
+                        Chọn ngày bất kỳ, hệ thống sẽ tự động điều chỉnh về ngày Thứ 2 của tuần đó
+                      </p>
+                    </div>
+                    {formData.week_start && (
+                      <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                        <p className="text-sm text-blue-800">
+                          📅 <strong>Tuần đã chọn:</strong> {getWeekRangeDisplay()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
                 {/* Working Days Selection */}
                 <Card>
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                    2. Chọn ngày làm việc trong tuần
+                    3. Chọn ngày làm việc trong tuần
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
-                    {weekDays.map((day) => (
-                      <button
-                        key={day.id}
-                        type="button"
-                        onClick={() => handleDayToggle(day.id)}
-                        className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                          formData.working_days.includes(day.id)
-                            ? "bg-blue-600 text-white shadow-lg scale-105"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                      >
-                        {day.label}
-                      </button>
-                    ))}
+                    {weekDays.map((day) => {
+                      const dateForDay = getDateForDay(day.id);
+                      return (
+                        <button
+                          key={day.id}
+                          type="button"
+                          onClick={() => handleDayToggle(day.id)}
+                          className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                            formData.working_days.includes(day.id)
+                              ? "bg-blue-600 text-white shadow-lg scale-105"
+                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          <div>{day.label}</div>
+                          {dateForDay && (
+                            <div className="text-xs mt-1 opacity-80">
+                              {formatDate(dateForDay)}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                   {errors.working_days && (
                     <p className="text-red-500 text-sm mt-2">{errors.working_days}</p>
@@ -315,7 +398,7 @@ const CreateWorkSchedule = () => {
                 {/* Working Time */}
                 <Card>
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                    3. Thiết lập giờ làm việc
+                    4. Thiết lập giờ làm việc
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -430,6 +513,16 @@ const CreateWorkSchedule = () => {
           </div>
         </main>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+          duration={toast.type === "info" ? 2000 : 3000}
+        />
+      )}
     </div>
   );
 };
