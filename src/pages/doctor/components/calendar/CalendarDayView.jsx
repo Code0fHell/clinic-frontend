@@ -7,7 +7,7 @@ import {
     formatUTCTime,
 } from "../../../../utils/dateUtils";
 
-const hours = Array.from({ length: 11 }, (_, i) => 8 + i);
+const hours = Array.from({ length: 14 }, (_, i) => 8 + i); // 8h → 21h
 
 const CalendarDayView = ({ appointments, current }) => {
     const getAppointmentsByHour = (date, hour) =>
@@ -31,7 +31,7 @@ const CalendarDayView = ({ appointments, current }) => {
                     </svg>
                     Giờ
                 </div>
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 font-bold text-center border-b-2 border-purple-700 py-4 text-white shadow-lg">
+                <div className="bg-[#00796B] font-bold text-center border-b-2 border-teal-700 py-4 text-white shadow-md">
                     <div className="text-base mb-1">{dayjs(current).format("dddd")}</div>
                     <div className="text-2xl font-extrabold">{dayjs(current).format("DD/MM/YYYY")}</div>
                 </div>
@@ -45,7 +45,7 @@ const CalendarDayView = ({ appointments, current }) => {
                             <div className="text-lg text-gray-700">{hour}:00</div>
                             <div className="text-xs text-gray-400">{hour + 1}:00</div>
                         </div>
-                        <div className={`relative border-b h-[80px] p-2 transition-all duration-200 hover:bg-blue-50 ${
+                        <div className={`relative border-b h-[80px] p-2 transition-all duration-200 hover:bg-teal-50/50 ${
                             idx % 2 === 0 ? "bg-gray-50/50" : "bg-white"
                         }`}>
                             {getAppointmentsByHour(current, hour).map((a) => {
@@ -56,16 +56,16 @@ const CalendarDayView = ({ appointments, current }) => {
                                 );
                                 const colorConfig =
                                     a.status === "CHECKED_IN"
-                                        ? { bg: "bg-gradient-to-br from-green-500 to-emerald-600", shadow: "shadow-green-500/40", border: "border-green-400", icon: "✓" }
+                                        ? { bg: "bg-[#00796B]", shadow: "shadow-md", border: "border-teal-600", icon: "✓" }
                                         : a.status === "PENDING"
-                                        ? { bg: "bg-gradient-to-br from-amber-400 to-yellow-500", shadow: "shadow-yellow-500/40", border: "border-yellow-400", icon: "⏱" }
+                                        ? { bg: "bg-amber-500", shadow: "shadow-md", border: "border-amber-600", icon: "⏱" }
                                         : a.status === "COMPLETED"
-                                        ? { bg: "bg-gradient-to-br from-blue-500 to-indigo-600", shadow: "shadow-blue-500/40", border: "border-blue-400", icon: "✓" }
-                                        : { bg: "bg-gradient-to-br from-gray-400 to-gray-500", shadow: "shadow-gray-500/40", border: "border-gray-400", icon: "•" };
+                                        ? { bg: "bg-blue-500", shadow: "shadow-md", border: "border-blue-600", icon: "✓" }
+                                        : { bg: "bg-gray-400", shadow: "shadow-md", border: "border-gray-500", icon: "•" };
                                 return (
                                     <div
                                         key={a.id}
-                                        className={`absolute inset-x-2 top-2 rounded-xl ${colorConfig.bg} text-white text-sm px-4 py-2.5 shadow-lg ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:scale-105 transition-all duration-200`}
+                                        className={`absolute inset-x-2 top-2 rounded-lg ${colorConfig.bg} text-white text-sm px-4 py-2.5 ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:opacity-90 transition-all duration-200`}
                                         title={a.patient?.patient_full_name}
                                     >
                                         <div className="flex items-center gap-2 mb-1.5">
