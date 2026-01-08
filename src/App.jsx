@@ -48,6 +48,8 @@ import DiagnosticIndicationListPage from './pages/doctor/diagnostic/DiagnosticIn
 import DiagnosticImageResultPage from './pages/doctor/diagnostic/DiagnosticImageResultPage';
 import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/DiagnosticCompletedResultsPage';
 
+import DoctorIndicationsPage from './pages/doctor/indications/DoctorIndicationsPage';
+
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
 
@@ -112,6 +114,10 @@ function App() {
                     <Route
                         path="/doctor/prescription/:id/edit"
                         element={<DoctorPrescriptionEditPage />}
+                    />
+                    <Route
+                        path="/doctor/indications"
+                        element={<DoctorIndicationsPage />}
                     />
 
                     {/* Protected routes */}
