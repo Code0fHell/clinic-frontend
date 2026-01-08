@@ -22,7 +22,8 @@ axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
         console.error("API error:", error.response?.data || error.message);
-        return Promise.reject(error.response?.data || error);
+        // Giữ nguyên error object để có thể truy cập error.response
+        return Promise.reject(error);
     }
 );
 
