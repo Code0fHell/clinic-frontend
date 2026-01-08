@@ -6,6 +6,7 @@ import {
     Users,
     FileText,
     ClipboardCheck,
+    ClipboardList,
 } from "lucide-react";
 
 export default function DoctorSidebar() {
@@ -13,6 +14,7 @@ export default function DoctorSidebar() {
         { icon: LayoutGrid, path: "/doctor/dashboard", label: "Tổng quan" },
         { icon: Calendar, path: "/doctor/appointment", label: "Lịch hẹn" },
         { icon: Users, path: "/doctor/visit", label: "Bệnh nhân" },
+        { icon: ClipboardList, path: "/doctor/indications", label: "Phiếu chỉ định" },
     ];
 
     return (

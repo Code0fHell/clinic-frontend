@@ -5,7 +5,7 @@ import {
     formatUTCTime,
 } from "../../../../utils/dateUtils";
 
-const hours = Array.from({ length: 11 }, (_, i) => 8 + i); // 8h → 18h
+const hours = Array.from({ length: 14 }, (_, i) => 8 + i); // 8h → 21h
 const weekdays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 const getWeekDates = (date) => {
@@ -46,7 +46,7 @@ const CalendarWeekView = ({ appointments, current }) => {
                             key={idx}
                             className={`font-bold text-center border-r-2 border-b-2 border-gray-300 py-3 sticky top-0 z-10 ${
                                 today 
-                                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg" 
+                                    ? "bg-[#00796B] text-white shadow-md" 
                                     : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700"
                             }`}
                         >
@@ -54,7 +54,7 @@ const CalendarWeekView = ({ appointments, current }) => {
                             <div className={`text-lg font-extrabold ${today ? "text-white" : "text-gray-800"}`}>
                                 {date.format("DD")}
                             </div>
-                            <div className={`text-xs ${today ? "text-blue-100" : "text-gray-500"}`}>
+                            <div className={`text-xs ${today ? "text-teal-100" : "text-gray-500"}`}>
                                 {date.format("MM/YYYY")}
                             </div>
                         </div>
@@ -76,8 +76,8 @@ const CalendarWeekView = ({ appointments, current }) => {
                             return (
                                 <div
                                     key={idx}
-                                    className={`relative border-r-2 border-b h-[70px] p-1.5 transition-all duration-200 hover:bg-blue-50 ${
-                                        today ? "bg-blue-50/30" : hourIdx % 2 === 0 ? "bg-gray-50/50" : "bg-white"
+                                    className={`relative border-r-2 border-b h-[70px] p-1.5 transition-all duration-200 hover:bg-teal-50/50 ${
+                                        today ? "bg-teal-50/20" : hourIdx % 2 === 0 ? "bg-gray-50/50" : "bg-white"
                                     }`}
                                 >
                                     {appts.map((a) => {
@@ -90,16 +90,16 @@ const CalendarWeekView = ({ appointments, current }) => {
                                         );
                                         const colorConfig =
                                             a.status === "CHECKED_IN"
-                                                ? { bg: "bg-gradient-to-br from-green-500 to-emerald-600", shadow: "shadow-green-500/40", border: "border-green-400" }
+                                                ? { bg: "bg-[#00796B]", shadow: "shadow-md", border: "border-teal-600" }
                                                 : a.status === "PENDING"
-                                                ? { bg: "bg-gradient-to-br from-amber-400 to-yellow-500", shadow: "shadow-yellow-500/40", border: "border-yellow-400" }
+                                                ? { bg: "bg-amber-500", shadow: "shadow-md", border: "border-amber-600" }
                                                 : a.status === "COMPLETED"
-                                                ? { bg: "bg-gradient-to-br from-blue-500 to-indigo-600", shadow: "shadow-blue-500/40", border: "border-blue-400" }
-                                                : { bg: "bg-gradient-to-br from-gray-400 to-gray-500", shadow: "shadow-gray-500/40", border: "border-gray-400" };
+                                                ? { bg: "bg-blue-500", shadow: "shadow-md", border: "border-blue-600" }
+                                                : { bg: "bg-gray-400", shadow: "shadow-md", border: "border-gray-500" };
                                         return (
                                             <div
                                                 key={a.id}
-                                                className={`absolute top-1.5 left-1.5 right-1.5 rounded-lg ${colorConfig.bg} text-white text-[11px] px-2.5 py-1.5 shadow-lg ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:scale-105 transition-transform duration-200`}
+                                                className={`absolute top-1.5 left-1.5 right-1.5 rounded-lg ${colorConfig.bg} text-white text-[11px] px-2.5 py-1.5 ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:opacity-90 transition-all duration-200`}
                                                 title={a.patient?.patient_full_name}
                                             >
                                                 <div className="flex items-center gap-1.5 mb-0.5">

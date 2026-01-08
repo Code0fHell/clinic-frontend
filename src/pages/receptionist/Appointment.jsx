@@ -400,7 +400,13 @@ export default function Appointment() {
                                                             </td>
 
                                                             {/* Lý do */}
-                                                            <td className="w-[200px] px-3 py-2 truncate border-r border-gray-200">
+                                                            <td
+                                                                className="w-[200px] px-3 py-2 border-r border-gray-200"
+                                                                style={{
+                                                                    whiteSpace: 'pre-wrap',
+                                                                    wordBreak: 'break-word'
+                                                                }}
+                                                            >
                                                                 {item.reason || "—"}
                                                             </td>
 

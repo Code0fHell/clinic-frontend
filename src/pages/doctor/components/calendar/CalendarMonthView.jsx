@@ -30,11 +30,11 @@ const CalendarMonthView = ({ appointments, current }) => {
   return (
     <div className="w-full h-full border-2 border-gray-300 rounded-xl bg-white overflow-hidden flex flex-col shadow-xl">
       {/* Header */}
-      <div className="grid grid-cols-7 bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-bold border-b-2 border-indigo-700 shadow-lg">
+      <div className="grid grid-cols-7 bg-[#00796B] text-sm font-bold border-b-2 border-teal-700 shadow-md">
         {weekdays.map((w, idx) => (
           <div
             key={idx}
-            className="text-center py-4 border-r last:border-r-0 border-indigo-500 text-white tracking-wide"
+            className="text-center py-4 border-r last:border-r-0 border-teal-600 text-white tracking-wide"
           >
             {w}
           </div>
@@ -52,26 +52,26 @@ const CalendarMonthView = ({ appointments, current }) => {
               return (
                 <div
                   key={dIdx}
-                  className={`border-r-2 border-b-2 border-gray-200 p-2 min-h-[100px] transition-all duration-200 hover:bg-blue-50 hover:shadow-inner ${
+                  className={`border-r-2 border-b-2 border-gray-200 p-2 min-h-[100px] transition-all duration-200 hover:bg-teal-50/50 ${
                     !isCurrentMonth 
                       ? "bg-gray-100/50 text-gray-400" 
                       : today
-                      ? "bg-gradient-to-br from-blue-100 to-indigo-100"
+                      ? "bg-teal-50/40"
                       : "bg-white"
                   }`}
                 >
                   <div className={`text-sm font-bold mb-2 flex items-center justify-between ${
                     today 
-                      ? "text-blue-700" 
+                      ? "text-teal-700" 
                       : isCurrentMonth 
                       ? "text-gray-800" 
                       : "text-gray-400"
                   }`}>
-                    <span className={`${today ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg" : ""}`}>
+                    <span className={`${today ? "bg-[#00796B] text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md" : ""}`}>
                       {date.date()}
                     </span>
                     {appts.length > 0 && (
-                      <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
+                      <span className="bg-[#00796B] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                         {appts.length}
                       </span>
                     )}
@@ -82,16 +82,16 @@ const CalendarMonthView = ({ appointments, current }) => {
                       const endUTC = startUTC.add(a.duration || 30, "minute");
                       const colorConfig =
                         a.status === "CHECKED_IN"
-                          ? { bg: "bg-gradient-to-br from-green-400 to-emerald-600", shadow: "shadow-green-500/30", border: "border-green-300" }
+                          ? { bg: "bg-[#00796B]", shadow: "shadow-sm", border: "border-teal-600" }
                           : a.status === "PENDING"
-                          ? { bg: "bg-gradient-to-br from-amber-400 to-yellow-500", shadow: "shadow-yellow-500/30", border: "border-yellow-300" }
+                          ? { bg: "bg-amber-500", shadow: "shadow-sm", border: "border-amber-600" }
                           : a.status === "COMPLETED"
-                          ? { bg: "bg-gradient-to-br from-blue-400 to-indigo-600", shadow: "shadow-blue-500/30", border: "border-blue-300" }
-                          : { bg: "bg-gradient-to-br from-gray-400 to-gray-600", shadow: "shadow-gray-500/30", border: "border-gray-300" };
+                          ? { bg: "bg-blue-500", shadow: "shadow-sm", border: "border-blue-600" }
+                          : { bg: "bg-gray-400", shadow: "shadow-sm", border: "border-gray-500" };
                       return (
                         <div
                           key={a.id}
-                          className={`rounded-lg ${colorConfig.bg} text-white text-[10px] px-2 py-1.5 truncate shadow-md ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:scale-105 transition-transform duration-200`}
+                          className={`rounded-lg ${colorConfig.bg} text-white text-[10px] px-2 py-1.5 truncate ${colorConfig.shadow} border-l-4 ${colorConfig.border} cursor-pointer hover:opacity-90 transition-all duration-200`}
                         >
                           <div className="flex items-center gap-1 mb-0.5">
                             <svg className="w-2.5 h-2.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -111,7 +111,7 @@ const CalendarMonthView = ({ appointments, current }) => {
                       );
                     })}
                     {appts.length > 3 && (
-                      <div className="text-[10px] font-bold text-indigo-600 mt-0.5 bg-indigo-100 px-2 py-1 rounded-full text-center">
+                      <div className="text-[10px] font-bold text-teal-700 mt-0.5 bg-teal-50 px-2 py-1 rounded-full text-center">
                         +{appts.length - 3} lịch khác
                       </div>
                     )}

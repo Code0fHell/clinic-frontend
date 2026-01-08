@@ -527,6 +527,8 @@ export default function Visit() {
         switch (status) {
             case "CHECKED_IN":
                 return "Đã xác nhận đến khám";
+            case "DOING":
+                return "Đang khám";
             case "COMPLETED":
                 return "Đã khám xong";
             case "CANCELLED":
@@ -587,6 +589,7 @@ export default function Visit() {
                                                     >
                                                         <option value="all">Tất cả</option>
                                                         <option value="checked_in">Đã đến thăm khám</option>
+                                                        <option value="doing">Đang khám</option>
                                                         <option value="completed">Đã khám xong</option>
                                                         <option value="cancelled">Đã hủy khám</option>
                                                     </select>
