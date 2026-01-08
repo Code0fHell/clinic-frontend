@@ -59,7 +59,7 @@ const AppointmentCalendar = () => {
   }, [fetchAppointments]);
 
   return (
-    <div className="flex gap-6 px-6 pt-[20px] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen ml-[50px]">
+    <div className="flex gap-6 px-6 pt-[20px] bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen ml-[50px]">
       {/* Lịch chính */}
       <div className="flex-1 min-w-0 bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
         <CalendarHeader view={view} setView={setView} current={current} setCurrent={setCurrent} />

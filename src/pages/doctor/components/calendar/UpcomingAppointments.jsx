@@ -3,8 +3,8 @@ import { parseUTCDate, formatUTCDateOnly, formatUTCTime } from "../../../../util
 
 const UpcomingAppointments = ({ upcoming }) => (
   <div className="w-[340px] shrink-0">
-    <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-xl border-2 border-blue-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 shadow-lg">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[#00796B] p-4 shadow-md">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 rounded-full p-2">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,7 +13,7 @@ const UpcomingAppointments = ({ upcoming }) => (
           </div>
           <div>
             <h3 className="font-bold text-lg text-white">Lịch Sắp Tới</h3>
-            <p className="text-blue-100 text-xs">Các cuộc hẹn gần nhất</p>
+            <p className="text-teal-100 text-xs">Các cuộc hẹn gần nhất</p>
           </div>
         </div>
       </div>
@@ -31,21 +31,21 @@ const UpcomingAppointments = ({ upcoming }) => (
             const startUTC = parseUTCDate(a.scheduled_date);
             const endUTC = startUTC.add(a.duration || 30, "minute");
             const colors = [
-              { gradient: "from-purple-500 to-pink-500", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-              { gradient: "from-blue-500 to-cyan-500", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-              { gradient: "from-green-500 to-emerald-500", bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
-              { gradient: "from-orange-500 to-amber-500", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200" },
-              { gradient: "from-rose-500 to-red-500", bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+              { gradient: "bg-[#00796B]", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+              { gradient: "bg-[#00897B]", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+              { gradient: "bg-[#009688]", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+              { gradient: "bg-[#00796B]", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+              { gradient: "bg-[#00897B]", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
             ];
             const colorScheme = colors[index % colors.length];
             
             return (
               <div 
                 key={a.id} 
-                className={`${colorScheme.bg} rounded-xl p-4 border-2 ${colorScheme.border} shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105`}
+                className={`${colorScheme.bg} rounded-lg p-4 border ${colorScheme.border} shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer hover:opacity-90`}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`bg-gradient-to-r ${colorScheme.gradient} text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg`}>
+                  <div className={`${colorScheme.gradient} text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-sm`}>
                     {index + 1}
                   </div>
                   <span className={`font-bold text-sm ${colorScheme.text}`}>
@@ -53,7 +53,7 @@ const UpcomingAppointments = ({ upcoming }) => (
                   </span>
                 </div>
                 
-                <div className={`flex items-center gap-2 mb-2 bg-gradient-to-r ${colorScheme.gradient} text-white px-3 py-1.5 rounded-lg shadow-md`}>
+                <div className={`flex items-center gap-2 mb-2 ${colorScheme.gradient} text-white px-3 py-1.5 rounded-lg shadow-sm`}>
                   <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                   </svg>
