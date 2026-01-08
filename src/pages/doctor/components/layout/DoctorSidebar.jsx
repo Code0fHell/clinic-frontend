@@ -13,8 +13,6 @@ export default function DoctorSidebar() {
         { icon: LayoutGrid, path: "/doctor/dashboard", label: "Tổng quan" },
         { icon: Calendar, path: "/doctor/appointment", label: "Lịch hẹn" },
         { icon: Users, path: "/doctor/visit", label: "Bệnh nhân" },
-        { icon: FileText, path: "/doctor/documents", label: "Hồ sơ" },
-        { icon: ClipboardCheck, path: "/doctor/checklist", label: "Checklist" },
     ];
 
     return (

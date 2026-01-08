@@ -6,18 +6,23 @@ export const Card = ({ children, className = "" }) => (
   </div>
 );
 
-export const StatCard = ({ title, value, subtitle, icon }) => (
-  <Card>
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-slate-500">{title}</p>
-        <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+export const StatCard = ({ title, value, subtitle, icon: Icon }) => {
+  return (
+    <div className="p-4 bg-white rounded-xl shadow-sm border">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+          <Icon className="w-6 h-6" />
+        </div>
+        <div>
+          <p className="text-sm text-slate-500">{title}</p>
+          <p className="text-2xl font-bold text-slate-800">{value}</p>
+          <p className="text-xs text-slate-400">{subtitle}</p>
+        </div>
       </div>
-      {icon && <div className="text-3xl text-slate-400">{icon}</div>}
     </div>
-  </Card>
-);
+  );
+};
+
 
 export const SkeletonBlock = ({ lines = 4 }) => (
   <div className="space-y-2">

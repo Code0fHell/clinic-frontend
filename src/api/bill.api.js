@@ -106,3 +106,19 @@ export const getPaymentReport = async ({ cursor = null, limit = 10 } = {}) => {
         };
     }
 }
+
+// Lấy bill theo prescriptionId (cho dược sĩ)
+export const getBillByPrescription = async (prescriptionId) => {
+    try {
+        const res = await axiosClient.get(
+            `/bill/prescription/${prescriptionId}`
+        );
+        return res.data;
+    } catch (error) {
+        console.error(
+            "Lỗi khi lấy bill theo đơn thuốc:",
+            error.response?.data || error.message
+        );
+        throw error;
+    }
+};
