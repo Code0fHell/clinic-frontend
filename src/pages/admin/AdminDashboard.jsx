@@ -6,6 +6,16 @@ import { Card, StatCard, LoadingSpinner } from "./components/ui";
 import { getAllUsers } from "../../api/user.api";
 import { getAllStaff } from "../../api/staff.api";
 
+import {
+  LayoutGrid,
+  Users,
+  UserCircle,
+  Stethoscope,
+  Briefcase,
+  PlusCircle,
+} from "lucide-react";
+
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -80,25 +90,28 @@ const AdminDashboard = () => {
                     title="Tổng số tài khoản"
                     value={stats.totalUsers}
                     subtitle="Tất cả người dùng"
-                    icon="👥"
+                    icon={Users}
                   />
+
                   <StatCard
                     title="Tổng nhân viên"
                     value={stats.totalStaff}
                     subtitle="Đang hoạt động"
-                    icon="👔"
+                    icon={Briefcase}
                   />
+
                   <StatCard
                     title="Bệnh nhân"
                     value={stats.totalPatients}
                     subtitle="Đã đăng ký"
-                    icon="🏥"
+                    icon={UserCircle}
                   />
+
                   <StatCard
                     title="Bác sĩ"
                     value={stats.totalDoctors}
                     subtitle="Trong hệ thống"
-                    icon="⚕️"
+                    icon={Stethoscope}
                   />
                 </div>
               )}
@@ -113,7 +126,7 @@ const AdminDashboard = () => {
                     onClick={() => navigate("/admin/accounts")}
                     className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
                   >
-                    <div className="text-2xl mb-2">👥</div>
+                    <Users className="w-6 h-6 text-blue-600 mb-2" />
                     <h4 className="font-semibold text-slate-800">
                       Quản lý tài khoản
                     </h4>
@@ -126,7 +139,7 @@ const AdminDashboard = () => {
                     onClick={() => navigate("/admin/staff")}
                     className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
                   >
-                    <div className="text-2xl mb-2">👔</div>
+                    <Briefcase className="w-6 h-6 text-green-600 mb-2" />
                     <h4 className="font-semibold text-slate-800">
                       Quản lý nhân viên
                     </h4>
@@ -139,7 +152,7 @@ const AdminDashboard = () => {
                     onClick={() => navigate("/admin/accounts?tab=add-patient")}
                     className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
                   >
-                    <div className="text-2xl mb-2">➕</div>
+                    <PlusCircle className="w-6 h-6 text-purple-600 mb-2" />
                     <h4 className="font-semibold text-slate-800">
                       Thêm bệnh nhân
                     </h4>

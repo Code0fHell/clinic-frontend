@@ -15,8 +15,6 @@ export default function DoctorSidebar() {
         { icon: Calendar, path: "/doctor/appointment", label: "Lịch hẹn" },
         { icon: Users, path: "/doctor/visit", label: "Bệnh nhân" },
         { icon: ClipboardList, path: "/doctor/indications", label: "Phiếu chỉ định" },
-        { icon: FileText, path: "/doctor/documents", label: "Hồ sơ" },
-        { icon: ClipboardCheck, path: "/doctor/checklist", label: "Checklist" },
     ];
 
     return (
