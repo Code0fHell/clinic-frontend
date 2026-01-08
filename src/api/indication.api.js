@@ -49,3 +49,10 @@ export const getTodayLabIndications = async () => {
   const res = await axiosClient.get("/indication-ticket/lab/today");
   return res.data;
 };
+
+// Lấy danh sách phiếu chỉ định của bác sĩ hôm nay (có thể filter theo loại)
+export const getDoctorTodayIndications = async (type) => {
+  const params = type ? { type } : {};
+  const res = await axiosClient.get("/indication-ticket/doctor/today", { params });
+  return res.data;
+};
