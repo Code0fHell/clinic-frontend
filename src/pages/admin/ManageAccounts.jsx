@@ -4,10 +4,11 @@ import Header from "./components/Header";
 import SideBar from "./components/SideBar";
 import { Card, Button, Badge, LoadingSpinner, EmptyState } from "./components/ui";
 import Toast from "../../components/modals/Toast";
-import { getAllUsers, deleteUser, createPatientAccount } from "../../api/user.api";
+import { getAllUsers, deleteUser, createPatientAccount, updateUser } from "../../api/user.api";
 import { createStaff } from "../../api/staff.api";
 import CreatePatientModal from "./components/CreatePatientModal";
 import CreateStaffModal from "./components/CreateStaffModal";
+import EditUserModal from "./components/EditUserModal";
 
 const ManageAccounts = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +25,8 @@ const ManageAccounts = () => {
   });
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -88,6 +91,24 @@ const ManageAccounts = () => {
       fetchUsers();
     } catch (error) {
       console.error("Error creating staff:", error);
+      throw error;
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateUser = async (data) => {
+    try {
+      await updateUser(selectedUser.id, data);
+      showToast("Cập nhật thông tin tài khoản thành công!");
+      setShowEditModal(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error updating user:", error);
       throw error;
     }
   };
@@ -247,15 +268,24 @@ const ManageAccounts = () => {
                                 {user.phone || "-"}
                               </td>
                               <td className="py-3 px-4 text-right">
-                                {user.user_role !== "ADMIN" && user.user_role !== "OWNER" && (
+                                <div className="flex gap-2 justify-end">
                                   <Button
-                                    onClick={() => handleDeleteUser(user.id, user.username)}
-                                    variant="danger"
+                                    onClick={() => handleEditUser(user)}
+                                    variant="secondary"
                                     className="text-xs"
                                   >
-                                    Xóa
+                                    Sửa
                                   </Button>
-                                )}
+                                  {user.user_role !== "ADMIN" && user.user_role !== "OWNER" && (
+                                    <Button
+                                      onClick={() => handleDeleteUser(user.id, user.username)}
+                                      variant="danger"
+                                      className="text-xs"
+                                    >
+                                      Xóa
+                                    </Button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -314,6 +344,17 @@ const ManageAccounts = () => {
         <CreateStaffModal
           onClose={() => setShowStaffModal(false)}
           onSubmit={handleCreateStaff}
+        />
+      )}
+
+      {showEditModal && selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUser(null);
+          }}
+          onSubmit={handleUpdateUser}
         />
       )}
 
