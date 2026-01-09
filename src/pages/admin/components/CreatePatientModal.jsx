@@ -19,12 +19,38 @@ const CreatePatientModal = ({ onClose, onSubmit }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate phone format (10-11 digits only)
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[0-9]{10,11}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // Validate email format
+      if (!validateEmail(formData.email)) {
+        setError("Email không đúng định dạng!");
+        setLoading(false);
+        return;
+      }
+
+      // Validate phone format
+      if (!validatePhone(formData.phone)) {
+        setError("Số điện thoại phải là 10-11 chữ số, không được chứa chữ cái hoặc ký tự đặc biệt!");
+        setLoading(false);
+        return;
+      }
+
       await onSubmit(formData);
     } catch (err) {
       setError(err.response?.data?.message || "Có lỗi xảy ra!");
@@ -89,8 +115,12 @@ const CreatePatientModal = ({ onClose, onSubmit }) => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="example@email.com"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
             />
+            <p className="text-xs text-slate-500 mt-1">
+              Nhập email đúng định dạng (VD: user@example.com)
+            </p>
           </div>
 
           <div>
@@ -150,9 +180,14 @@ const CreatePatientModal = ({ onClose, onSubmit }) => {
               value={formData.phone}
               onChange={handleChange}
               required
-              pattern="^(0|\+84)(\d{9,10})$"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="0912345678"
+              pattern="[0-9]*"
+              inputMode="numeric"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
             />
+            <p className="text-xs text-slate-500 mt-1">
+              Chỉ nhập số, 10-11 chữ số (VD: 0912345678)
+            </p>
           </div>
 
           <div>

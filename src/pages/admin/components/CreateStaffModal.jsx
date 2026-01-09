@@ -32,12 +32,38 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
     }
   };
 
+  // Validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate phone format (10-11 digits only)
+  const validatePhone = (phone) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^[0-9]{10,11}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setLoading(true);
 
     try {
+      // Validate email format
+      if (!validateEmail(formData.email)) {
+        setErrors({ email: "Email không đúng định dạng!" });
+        setLoading(false);
+        return;
+      }
+
+      // Validate phone format
+      if (formData.phone && !validatePhone(formData.phone)) {
+        setErrors({ phone: "Số điện thoại phải là 10-11 chữ số, không được chứa chữ cái hoặc ký tự đặc biệt!" });
+        setLoading(false);
+        return;
+      }
       // Loại bỏ các field rỗng
       const submitData = { ...formData };
       if (!submitData.doctor_type) delete submitData.doctor_type;
@@ -213,14 +239,19 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
               value={formData.email}
               onChange={handleChange}
               required
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+              placeholder="example@email.com"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 placeholder:text-slate-400 ${
                 errors.email 
                   ? "border-red-500 focus:ring-red-500" 
                   : "border-slate-300 focus:ring-blue-500"
               }`}
             />
-            {errors.email && (
+            {errors.email ? (
               <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                Nhập email đúng định dạng (VD: user@example.com)
+              </p>
             )}
           </div>
 
@@ -254,6 +285,8 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
               value={formData.phone}
               onChange={handleChange}
               placeholder="0912345678"
+              pattern="[0-9]*"
+              inputMode="numeric"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 placeholder:text-slate-400 ${
                 errors.phone 
                   ? "border-red-500 focus:ring-red-500" 
@@ -264,7 +297,7 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
               <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
             ) : (
               <p className="text-xs text-slate-500 mt-1">
-                Nhập số điện thoại 10-11 chữ số
+                Chỉ nhập số, 10-11 chữ số (VD: 0912345678)
               </p>
             )}
           </div>

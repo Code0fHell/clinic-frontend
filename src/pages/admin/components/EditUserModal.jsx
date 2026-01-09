@@ -6,6 +6,7 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
     full_name: "",
     email: "",
     phone: "",
+    user_role: "",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -16,6 +17,7 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
         full_name: user.full_name || "",
         email: user.email || "",
         phone: user.phone || "",
+        user_role: user.user_role || "",
       });
     }
   }, [user]);
@@ -33,12 +35,40 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
     }
   };
 
+  // Validate email format
+  const validateEmail = (email) => {
+    if (!email) return true; // Optional field
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate phone format (10-11 digits only)
+  const validatePhone = (phone) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^[0-9]{10,11}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setLoading(true);
 
     try {
+      // Validate email format
+      if (formData.email && !validateEmail(formData.email)) {
+        setErrors({ email: "Email không đúng định dạng!" });
+        setLoading(false);
+        return;
+      }
+
+      // Validate phone format
+      if (formData.phone && !validatePhone(formData.phone)) {
+        setErrors({ phone: "Số điện thoại phải là 10-11 chữ số, không được chứa chữ cái hoặc ký tự đặc biệt!" });
+        setLoading(false);
+        return;
+      }
+
       // Loại bỏ các field rỗng hoặc không thay đổi
       const submitData = {};
       if (formData.full_name && formData.full_name !== user.full_name) {
@@ -49,6 +79,9 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
       }
       if (formData.phone && formData.phone !== user.phone) {
         submitData.phone = formData.phone;
+      }
+      if (formData.user_role && formData.user_role !== user.user_role) {
+        submitData.user_role = formData.user_role;
       }
 
       // Nếu không có gì thay đổi
@@ -78,6 +111,8 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
               newErrors.full_name = msg;
             } else if (lowerMsg.includes("phone") || lowerMsg.includes("điện thoại")) {
               newErrors.phone = msg;
+            } else if (lowerMsg.includes("role") || lowerMsg.includes("vai trò")) {
+              newErrors.user_role = msg;
             } else {
               if (!newErrors.general) newErrors.general = msg;
               else newErrors.general += "; " + msg;
@@ -99,6 +134,8 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
             newErrors.phone = message;
           } else if (lowerMsg.includes("full_name") || lowerMsg.includes("họ") || lowerMsg.includes("tên")) {
             newErrors.full_name = message;
+          } else if (lowerMsg.includes("role") || lowerMsg.includes("vai trò")) {
+            newErrors.user_role = message;
           } else {
             newErrors.general = message;
           }
@@ -119,7 +156,7 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
         <div className="p-6 border-b border-slate-200">
           <h2 className="text-2xl font-bold text-slate-800">Cập nhật thông tin tài khoản</h2>
           <p className="text-sm text-slate-600 mt-1">
-            {user?.username} - {user?.user_role}
+            {user?.username}
           </p>
         </div>
 
@@ -159,14 +196,19 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+              placeholder="example@email.com"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 placeholder:text-slate-400 ${
                 errors.email
                   ? "border-red-500 focus:ring-red-500"
                   : "border-slate-300 focus:ring-blue-500"
               }`}
             />
-            {errors.email && (
+            {errors.email ? (
               <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                Nhập email đúng định dạng (VD: user@example.com)
+              </p>
             )}
           </div>
 
@@ -180,15 +222,51 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
               value={formData.phone}
               onChange={handleChange}
               placeholder="0912345678"
+              pattern="[0-9]*"
+              inputMode="numeric"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 placeholder:text-slate-400 ${
                 errors.phone
                   ? "border-red-500 focus:ring-red-500"
                   : "border-slate-300 focus:ring-blue-500"
               }`}
             />
-            {errors.phone && (
+            {errors.phone ? (
               <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                Chỉ nhập số, 10-11 chữ số (VD: 0912345678)
+              </p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Vai trò <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="user_role"
+              value={formData.user_role}
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.user_role
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-slate-300 focus:ring-blue-500"
+              }`}
+            >
+              <option value="PATIENT">Bệnh nhân</option>
+              <option value="RECEPTIONIST">Lễ tân</option>
+              <option value="PHARMACIST">Dược sĩ</option>
+              <option value="DOCTOR">Bác sĩ</option>
+              <option value="ADMIN">Admin</option>
+              <option value="OWNER">Owner</option>
+            </select>
+            {errors.user_role && (
+              <p className="text-xs text-red-600 mt-1">{errors.user_role}</p>
+            )}
+            <p className="text-xs text-amber-600 mt-1">
+              ⚠️ Thay đổi vai trò có thể ảnh hưởng đến quyền truy cập của người dùng
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">
