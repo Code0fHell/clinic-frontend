@@ -160,29 +160,7 @@ export default function MedicineInventory() {
                             <div className="flex flex-wrap items-center mt-4">
                                 <h1 className="text-2xl font-bold text-gray-700">Quản lý tồn kho thuốc</h1>
                             </div>
-                            {/* <button
-                                onClick={() => {
-                                    resetForm();
-                                    setShowModal(true);
-                                }}
-                                className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
-                            >
-                                <Plus size={20} />
-                                Thêm thuốc mới
-                            </button> */}
-                        </div>
-
-                        {/* Search Bar */}
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Tìm kiếm theo tên hoặc loại thuốc..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                            <Search className="absolute left-3 top-3.5 text-gray-400" size={20} />
-                        </div>
+                        </div>                       
 
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -241,6 +219,18 @@ export default function MedicineInventory() {
                             </div>
 
                             <MedicineSalesChart data={salesData} isLoading={salesLoading} error={salesError} />
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm theo tên hoặc loại thuốc..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            />
+                            <Search className="absolute left-3 top-3.5 text-gray-400" size={20} />
                         </div>
 
                         {/* Table */}
