@@ -52,6 +52,7 @@ import DoctorIndicationsPage from './pages/doctor/indications/DoctorIndicationsP
 
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
+import MedicineInventory from "./pages/owner/MedicineInventory";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageAccounts from "./pages/admin/ManageAccounts";
@@ -69,15 +70,15 @@ function App() {
                     <Route path="/" element={<HomePage />} />
                     <Route path="/home" element={<HomePage />} />
                     <Route path="/patient/home" element={<HomePage />} />
-                    
+
                     {/* Login pages - separated, no suggestions */}
                     <Route path="/patient/login" element={<PatientLoginPage />} />
                     <Route path="/staff/login" element={<StaffLoginPage />} />
                     <Route path="/login" element={<PatientLoginPage />} />
-                    
+
                     {/* Register */}
                     <Route path="/register" element={<RegisterPage />} />
-                    
+
                     {/* Appointment success */}
                     <Route path="/appointment/success" element={<AppointmentSuccessPage />} />
                     <Route
@@ -127,7 +128,7 @@ function App() {
                         <Route path='/lab/indications' element={<LabIndicationListPage />} />
                         <Route path='/lab/indication/:id/result' element={<LabTestResultPage />} />
                         <Route path='/lab/completed-results' element={<LabCompletedResultsPage />} />
-                        <Route path='/lab/results' element={<LabTestResultListPage/>}/>
+                        <Route path='/lab/results' element={<LabTestResultListPage />} />
                         {/* diagnostic doctor routes */}
                         <Route path='/diagnostic/dashboard' element={<DiagnosticDoctorDashBoardPage />} />
                         <Route path='/diagnostic/indications' element={<DiagnosticIndicationListPage />} />
@@ -187,6 +188,11 @@ function App() {
                         <Route
                             path="/owner/manage-schedule-staff"
                             element={<ManageScheduleStaff />}
+                        />
+
+                        <Route
+                            path="/owner/medicine-inventory"
+                            element={<MedicineInventory />}
                         />
 
                         {/* Admin routes */}

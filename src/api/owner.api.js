@@ -36,6 +36,7 @@ export const getWeeklyScheduleOwner = async ({
     roleType = "all",
     cursor = null,
     limit = 10,
+    search = undefined,
 } = {}) => {
     try {
         const params = {
@@ -47,6 +48,10 @@ export const getWeeklyScheduleOwner = async ({
         // chỉ gửi cursor khi load page tiếp theo
         if (cursor !== null && cursor !== undefined) {
             params.cursor = cursor;
+        }
+
+        if (search !== undefined && search !== null && String(search).trim() !== '') {
+            params.search = String(search).trim();
         }
 
         const res = await axiosClient.get("/owner/weekly", { params });
@@ -122,6 +127,23 @@ export const exportRevenueExcel = async ({
     // Cleanup
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+};
+
+// Lấy số lượng bán theo thuốc trong khoảng thời gian (FE gọi endpoint BE)
+export const getMedicineSales = async ({ startDate, endDate } = {}) => {
+    try {
+        const res = await axiosClient.get('/owner/medicine-sales', {
+            params: {
+                startDate,
+                endDate,
+            },
+        });
+
+        return res.data.data || [];
+    } catch (err) {
+        console.error('Lỗi khi lấy số lượng bán theo thuốc:', err.response?.data || err);
+        return [];
+    }
 };
 
 
