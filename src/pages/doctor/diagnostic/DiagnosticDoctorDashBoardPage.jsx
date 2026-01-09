@@ -31,7 +31,9 @@ const DiagnosticDoctorDashBoardPage = () => {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Chờ xử lý</p>
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            Chờ xử lý
+                                        </p>
                                         <p className="text-3xl font-bold text-orange-600">
                                             {stats.pendingScans}
                                         </p>
@@ -58,7 +60,9 @@ const DiagnosticDoctorDashBoardPage = () => {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Hoàn thành hôm nay</p>
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            Hoàn thành hôm nay
+                                        </p>
                                         <p className="text-3xl font-bold text-green-600">
                                             {stats.completedToday}
                                         </p>
@@ -85,7 +89,9 @@ const DiagnosticDoctorDashBoardPage = () => {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Tuần này</p>
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            Tuần này
+                                        </p>
                                         <p className="text-3xl font-bold text-blue-600">
                                             {stats.totalThisWeek}
                                         </p>
@@ -112,7 +118,9 @@ const DiagnosticDoctorDashBoardPage = () => {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Tháng này</p>
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            Tháng này
+                                        </p>
                                         <p className="text-3xl font-bold text-purple-600">
                                             {stats.totalThisMonth}
                                         </p>
@@ -142,9 +150,11 @@ const DiagnosticDoctorDashBoardPage = () => {
                             <h2 className="text-xl font-semibold text-gray-800 mb-4">
                                 Truy cập nhanh
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <button
-                                    onClick={() => navigate("/diagnostic/indications")}
+                                    onClick={() =>
+                                        navigate("/diagnostic/indications")
+                                    }
                                     className="flex items-center gap-4 p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all"
                                 >
                                     <div className="bg-blue-100 p-3 rounded-full">
@@ -168,13 +178,18 @@ const DiagnosticDoctorDashBoardPage = () => {
                                             Danh sách chỉ định
                                         </h3>
                                         <p className="text-sm text-gray-600">
-                                            Xem và xử lý các phiếu chỉ định chẩn đoán hình ảnh
+                                            Xem và xử lý các phiếu chỉ định chẩn
+                                            đoán hình ảnh
                                         </p>
                                     </div>
                                 </button>
 
                                 <button
-                                    onClick={() => navigate("/diagnostic/completed-results")}
+                                    onClick={() =>
+                                        navigate(
+                                            "/diagnostic/completed-results"
+                                        )
+                                    }
                                     className="flex items-center gap-4 p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 hover:border-green-400 transition-all"
                                 >
                                     <div className="bg-green-100 p-3 rounded-full">
@@ -198,7 +213,42 @@ const DiagnosticDoctorDashBoardPage = () => {
                                             Kết quả đã xử lý
                                         </h3>
                                         <p className="text-sm text-gray-600">
-                                            Xem và in các kết quả chẩn đoán hình ảnh đã hoàn thành
+                                            Xem và in các kết quả chẩn đoán hình
+                                            ảnh đã hoàn thành
+                                        </p>
+                                    </div>
+                                </button>
+
+                                {/* Lịch sử kết quả */}
+                                <button
+                                    onClick={() =>
+                                        navigate("/diagnostic/image-results")
+                                    }
+                                    className="flex items-center gap-4 p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-all"
+                                >
+                                    <div className="bg-purple-100 p-3 rounded-full">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-6 w-6 text-purple-600"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="font-semibold text-gray-800">
+                                            Lịch sử kết quả
+                                        </h3>
+                                        <p className="text-sm text-gray-600">
+                                            Tra cứu tất cả kết quả chẩn đoán
+                                            hình ảnh đã hoàn thành
                                         </p>
                                     </div>
                                 </button>
@@ -212,5 +262,3 @@ const DiagnosticDoctorDashBoardPage = () => {
 };
 
 export default DiagnosticDoctorDashBoardPage;
-
-

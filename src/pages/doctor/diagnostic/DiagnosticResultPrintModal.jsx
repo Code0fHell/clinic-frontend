@@ -4,6 +4,7 @@ import Barcode from "react-barcode";
 import { formatUTCDate } from "../../../utils/dateUtils";
 
 const DiagnosticResultPrintModal = ({ result, onClose }) => {
+    console.log("result: ", result);
     const printRef = useRef();
 
     const handlePrint = useReactToPrint({
@@ -52,8 +53,8 @@ const DiagnosticResultPrintModal = ({ result, onClose }) => {
                         <div className="flex justify-between items-start">
                             <div>
                                 <h2 className="font-bold text-xl text-blue-700">PHÒNG KHÁM PMED CLINIC</h2>
-                                <p className="text-sm text-gray-600">Địa chỉ: 123 Đường ABC, Quận 1, TP.HCM</p>
-                                <p className="text-sm text-gray-600">Điện thoại: (028) 1234 5678</p>
+                                <p className="text-sm text-gray-600">Địa chỉ: Km10 Nguyễn Trãi, Phường Mộ Lao, Quận Hà Đông, TP Hà Nội</p>
+                                <p className="text-sm text-gray-600">Điện thoại: (555) 123-4567</p>
                             </div>
                             {result.barcode && (
                                 <div className="flex flex-col items-center">
@@ -112,7 +113,7 @@ const DiagnosticResultPrintModal = ({ result, onClose }) => {
                             <div className="flex">
                                 <span className="font-semibold w-40">Ngày chỉ định:</span>
                                 <span className="flex-1">
-                                    {formatUTCDate(result.indication?.indication_date, "DD/MM/YYYY HH:mm")}
+                                    {formatUTCDate(result.indication?.indication_date, "DD/MM/YYYY")}
                                 </span>
                             </div>
                             <div className="flex col-span-2">
@@ -122,31 +123,65 @@ const DiagnosticResultPrintModal = ({ result, onClose }) => {
                             <div className="flex col-span-2">
                                 <span className="font-semibold w-40">Dịch vụ thực hiện:</span>
                                 <span className="flex-1">
-                                    {result.serviceNames?.join(", ")}
+                                    {result.indication?.serviceItems?.map((item) => item.medical_service?.service_name).join(", ")}
                                 </span>
                             </div>
                         </div>
                     </div>
 
                     {/* Hình ảnh chẩn đoán */}
-                    {result.images && result.images.length > 0 && (
+                    {(result.image_url || (result.images && result.images.length > 0)) && (
                         <div className="mb-6">
                             <h4 className="font-bold text-lg mb-3 text-gray-800 uppercase border-b border-gray-300 pb-2">
                                 III. Hình ảnh chẩn đoán
                             </h4>
                             <div className="grid grid-cols-2 gap-4">
-                                {result.images.map((image, idx) => (
-                                    <div key={idx} className="border border-gray-300 p-2 rounded">
-                                        <img
-                                            src={image}
-                                            alt={`Ảnh chẩn đoán ${idx + 1}`}
-                                            className="w-full h-64 object-contain bg-gray-50"
-                                        />
-                                        <p className="text-center text-sm text-gray-600 mt-2">
-                                            Hình {idx + 1}: {result.serviceNames?.[idx] || `Ảnh ${idx + 1}`}
-                                        </p>
-                                    </div>
-                                ))}
+                                {result.images && result.images.length > 0
+                                    ? result.images.map((image, idx) => {
+                                        const imageUrl = image.startsWith("http")
+                                            ? image
+                                            : `${import.meta.env.VITE_API_URL}${image}`;
+                                        return (
+                                            <div key={idx} className="border border-gray-300 p-2 rounded">
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={`Ảnh chẩn đoán ${idx + 1}`}
+                                                    className="w-full h-64 object-contain bg-gray-50 cursor-pointer"
+                                                    onClick={() => window.open(imageUrl, "_blank")}
+                                                    onError={e => { e.target.style.display = "none"; }}
+                                                />
+                                                <p className="text-center text-sm text-gray-600 mt-2">
+                                                    Hình {idx + 1}
+                                                </p>
+                                            </div>
+                                        );
+                                    })
+                                    : (
+                                        <div className="border border-gray-300 p-2 rounded">
+                                            <img
+                                                src={
+                                                    result.image_url.startsWith("http")
+                                                        ? result.image_url
+                                                        : `${import.meta.env.VITE_API_URL}${result.image_url}`
+                                                }
+                                                alt="Ảnh chẩn đoán"
+                                                className="w-full h-64 object-contain bg-gray-50 cursor-pointer"
+                                                onClick={() =>
+                                                    window.open(
+                                                        result.image_url.startsWith("http")
+                                                            ? result.image_url
+                                                            : `${import.meta.env.VITE_API_URL}${result.image_url}`,
+                                                        "_blank"
+                                                    )
+                                                }
+                                                onError={e => { e.target.style.display = "none"; }}
+                                            />
+                                            <p className="text-center text-sm text-gray-600 mt-2">
+                                                Ảnh chẩn đoán
+                                            </p>
+                                        </div>
+                                    )
+                                }
                             </div>
                         </div>
                     )}
