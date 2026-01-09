@@ -2,13 +2,15 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
     LayoutGrid,
-    CalendarDays
+    CalendarDays,
+    Pill
 } from "lucide-react";
 
 export default function SideBar() {
     const menuItems = [
         { icon: LayoutGrid, path: "/owner/dashboard", tooltip: "Trang chủ" },
         { icon: CalendarDays, path: "/owner/manage-schedule-staff", tooltip: "Quản lý lịch làm việc" },
+        { icon: Pill, path: "/owner/medicine-inventory", tooltip: "Quản lý tồn kho thuốc" },
     ];
 
     return (
