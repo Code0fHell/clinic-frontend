@@ -44,7 +44,7 @@ export const getCompletedDiagnosticResults = async () => {
 
 export const getCompletedDiagnosticResultsWithFilter = async (params = {}) => {
     const { filter_type = "all", page = 1, limit = 10 } = params;
-    const res = await axiosClient.get("/imaging/completed", {
+    const res = await axiosClient.get("/imaging/query/completed", {
         params: { filter_type, page, limit },
     });
     return res.data;

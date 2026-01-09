@@ -49,6 +49,7 @@ import DiagnosticImageResultPage from './pages/doctor/diagnostic/DiagnosticImage
 import DiagnosticCompletedResultsPage from './pages/doctor/diagnostic/DiagnosticCompletedResultsPage';
 
 import DoctorIndicationsPage from './pages/doctor/indications/DoctorIndicationsPage';
+import DiagnosticImageResultListPage from "./pages/doctor/diagnostic/DiagnosticImageResultListPage";
 
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import ManageScheduleStaff from "./pages/owner/ManageScheduleStaff";
@@ -119,6 +120,10 @@ function App() {
                     <Route
                         path="/doctor/indications"
                         element={<DoctorIndicationsPage />}
+                    />
+                    <Route
+                        path="/diagnostic/image-results"
+                        element={<DiagnosticImageResultListPage />}
                     />
 
                     {/* Protected routes */}

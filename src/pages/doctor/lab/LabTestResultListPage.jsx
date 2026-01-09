@@ -26,6 +26,7 @@ const LabTestResultListPage = () => {
         message: "",
         type: "success",
     });
+    console.log("results: ", results);
 
     const showToast = (message, type = "success") => {
         setToast({ show: true, message, type });
