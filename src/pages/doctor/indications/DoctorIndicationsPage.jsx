@@ -269,11 +269,6 @@ const DoctorIndicationsPage = () => {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                {item.queue_number && (
-                                                                    <span className="text-sm text-gray-600 ml-4">
-                                                                        STT: {item.queue_number}
-                                                                    </span>
-                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}
