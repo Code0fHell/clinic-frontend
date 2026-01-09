@@ -104,17 +104,32 @@ const StaffWeeklyScheduleDetail = () => {
 
   const handleDeleteSchedule = async (scheduleId) => {
     const confirm = window.confirm(
-      "Bạn có chắc muốn xóa lịch làm việc này? Lưu ý: Chỉ có thể xóa nếu chưa có slot nào được đặt."
+      "⚠️ Xác nhận xóa lịch làm việc\n\nBạn có chắc muốn xóa lịch này không?\n\nLưu ý: Không thể xóa nếu có slot đã được đặt hẹn."
     );
     if (!confirm) return;
 
     try {
       await deleteWorkSchedule(scheduleId);
-      showToast("Xóa lịch thành công!");
+      showToast("Xóa lịch làm việc thành công!");
       fetchStaffWeeklySchedule();
     } catch (error) {
       console.error("Error deleting schedule:", error);
-      showToast(error.response?.data?.message || "Lỗi khi xóa lịch!", "error");
+      
+      // Lấy thông báo lỗi từ response
+      let errorMessage = "Không thể xóa lịch làm việc!";
+      
+      if (error.response?.data?.message) {
+        // Sử dụng message từ backend (đã được dịch sang tiếng Việt)
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 400) {
+        errorMessage = "Không thể xóa - có slot đã được đặt hẹn";
+      } else if (error.response?.status === 404) {
+        errorMessage = "Không tìm thấy lịch làm việc này";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Lỗi hệ thống - vui lòng thử lại sau";
+      }
+      
+      showToast(errorMessage, "error");
     }
   };
 
