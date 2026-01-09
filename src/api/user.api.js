@@ -40,6 +40,12 @@ export const getUserById = async (id) => {
   return res.data;
 };
 
+// Cập nhật user theo ID (Admin only)
+export const updateUser = async (id, data) => {
+  const res = await axiosClient.put(`/user/${id}`, data);
+  return res.data;
+};
+
 // Tạo tài khoản bệnh nhân mới
 export const createPatientAccount = async (data) => {
   const res = await axiosClient.post("/user/create-patient-account", data);

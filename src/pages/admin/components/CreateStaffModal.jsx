@@ -7,6 +7,7 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
     password: "",
     email: "",
     full_name: "",
+    phone: "",
     user_role: "RECEPTIONIST",
     department: "",
     position: "",
@@ -43,6 +44,7 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
       if (!submitData.license_number) delete submitData.license_number;
       if (!submitData.department) delete submitData.department;
       if (!submitData.position) delete submitData.position;
+      if (!submitData.phone) delete submitData.phone;
 
       await onSubmit(submitData);
     } catch (err) {
@@ -70,6 +72,8 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
               newErrors.password = msg;
             } else if (lowerMsg.includes("full_name") || lowerMsg.includes("họ") || lowerMsg.includes("tên")) {
               newErrors.full_name = msg;
+            } else if (lowerMsg.includes("phone") || lowerMsg.includes("điện thoại") || lowerMsg.includes("số điện thoại")) {
+              newErrors.phone = msg;
             } else if (lowerMsg.includes("license") || lowerMsg.includes("giấy phép")) {
               newErrors.license_number = msg;
             } else if (lowerMsg.includes("department") || lowerMsg.includes("khoa") || lowerMsg.includes("phòng ban")) {
@@ -107,6 +111,8 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
             newErrors.password = message;
           } else if (lowerMsg.includes("full_name") || lowerMsg.includes("họ") || lowerMsg.includes("tên")) {
             newErrors.full_name = message;
+          } else if (lowerMsg.includes("phone") || lowerMsg.includes("điện thoại") || lowerMsg.includes("số điện thoại")) {
+            newErrors.phone = message;
           } else if (lowerMsg.includes("license") || lowerMsg.includes("giấy phép")) {
             newErrors.license_number = message;
           } else if (lowerMsg.includes("department") || lowerMsg.includes("khoa") || lowerMsg.includes("phòng ban")) {
@@ -235,6 +241,31 @@ const CreateStaffModal = ({ onClose, onSubmit }) => {
             />
             {errors.full_name && (
               <p className="text-xs text-red-600 mt-1">{errors.full_name}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Số điện thoại
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="0912345678"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 placeholder:text-slate-400 ${
+                errors.phone 
+                  ? "border-red-500 focus:ring-red-500" 
+                  : "border-slate-300 focus:ring-blue-500"
+              }`}
+            />
+            {errors.phone ? (
+              <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                Nhập số điện thoại 10-11 chữ số
+              </p>
             )}
           </div>
 
