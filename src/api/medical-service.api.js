@@ -18,9 +18,13 @@ export const getHomepageServices = async (service_type) => {
   return res.data;
 };
 
-// Tìm kiếm dịch vụ theo từ khóa (ví dụ: “X-quang”, “Máu”, ...)
-export const searchMedicalServices = async (keyword) => {
-  const res = await axiosClient.get(`/medical-service/search?q=${encodeURIComponent(keyword)}`);
+// Tìm kiếm dịch vụ theo từ khóa và loại (ví dụ: "X-quang", "Máu", ...)
+export const searchMedicalServices = async (keyword, serviceType) => {
+  let url = `/medical-service/search?q=${encodeURIComponent(keyword)}`;
+  if (serviceType) {
+    url += `&service_type=${serviceType}`;
+  }
+  const res = await axiosClient.get(url);
   return res.data.data;
 };
 
