@@ -17,8 +17,17 @@ const STATUS_LABELS = {
     leave: { text: "Nghỉ phép", color: "bg-amber-100 text-amber-700 border-amber-200" },
 };
 
+const getMonday = (baseDate = new Date()) => {
+    const d = new Date(baseDate);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d;
+};
+
 const today = new Date();
 const toDateInput = (d) => d.toISOString().slice(0, 10);
+const monday = getMonday(today);
 
 const getWeekDays = (startDate) => {
     const start = new Date(startDate);
@@ -39,11 +48,13 @@ export default function ManageScheduleStaff() {
     const [openDetail, setOpenDetail] = useState(false);
     const [selectedScheduleId, setSelectedScheduleId] = useState(null);
     const [roleFilter, setRoleFilter] = useState("all");
-    const [weekStart, setWeekStart] = useState(toDateInput(today));
-    const [data, setData] = useState([]);          // dữ liệu thật từ BE
+    const [searchTerm, setSearchTerm] = useState("");
+    const [weekStart, setWeekStart] = useState(toDateInput(monday));
+    const [data, setData] = useState([]);
     const [cursor, setCursor] = useState(null);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+
     const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
     const loadSchedule = async (reset = false) => {
@@ -56,6 +67,7 @@ export default function ManageScheduleStaff() {
             roleType: roleFilter,
             cursor: reset ? null : cursor,
             limit: 10,
+            search: searchTerm,
         });
 
         setData(prev =>
@@ -70,8 +82,16 @@ export default function ManageScheduleStaff() {
     useEffect(() => {
         setCursor(null);
         setHasMore(true);
-        loadSchedule(true);
-    }, [weekStart, roleFilter]);
+
+        let timer;
+        if (searchTerm.trim().length > 0) {
+            timer = setTimeout(() => loadSchedule(true), 400);
+        } else {
+            loadSchedule(true);
+        }
+
+        return () => clearTimeout(timer);
+    }, [weekStart, roleFilter, searchTerm]);
 
     const counts = useMemo(() => {
         const result = { work: 0, off: 0, leave: 0 };
@@ -91,7 +111,7 @@ export default function ManageScheduleStaff() {
     const shiftWeek = (delta) => {
         const start = new Date(weekStart);
         start.setDate(start.getDate() + delta * 7);
-        setWeekStart(toDateInput(start));
+        setWeekStart(start.toISOString().slice(0, 10));
     };
 
     return (
@@ -107,47 +127,82 @@ export default function ManageScheduleStaff() {
                     <Sidebar />
                 </div>
 
-                {/* ==== MAIN CONTENT ====*/}
                 <main className="flex-1 ml-24 flex flex-col overflow-hidden p-4 space-y-4">
+
                     <div className="flex flex-wrap items-center mt-4">
                         <h1 className="text-2xl font-bold text-gray-700">Quản lý lịch làm việc</h1>
-                        {/* <span className="text-sm text-slate-500">Thiết lập lịch cho lễ tân và bác sĩ trong tuần</span> */}
                     </div>
 
-                    <div className="grid gap-3 lg:grid-cols-3">
-                        <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end w-full">
+
+                        {/* SEARCH */}
+                        <div className="flex flex-col gap-1 max-w-[260px]">
+                            <span className="text-sm font-medium text-slate-600">Tìm kiếm</span>
+                            <div className="relative">
+                                <input
+                                    type="search"
+                                    placeholder="Tên nhân sự"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+
+                                    className="w-full pl-10 pr-4 py-2 text-base rounded-lg border border-gray-300
+                 focus:outline-none focus:ring-2 focus:ring-[#008080] transition
+                 placeholder:text-gray-400"
+                                />
+
+                                <svg
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
                             <span className="text-sm font-medium text-slate-600">Bộ phận</span>
-                            <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-                                {ROLES.map((r) => (
+
+                            <div className="flex gap-2 p-1 bg-white rounded-lg shadow-sm w-fit">
+                                {ROLES.map(role => (
                                     <button
-                                        key={r.key}
-                                        onClick={() => setRoleFilter(r.key)}
-                                        className={`hover:cursor-pointer px-3 py-2 text-sm font-semibold rounded-lg transition ${roleFilter === r.key
-                                            ? "bg-emerald-600 text-white shadow-sm"
-                                            : "text-slate-600 hover:bg-slate-100"
-                                            }`}
+                                        key={role.key}
+                                        onClick={() => setRoleFilter(role.key)}
+                                        className={
+                                            roleFilter === role.key
+                                                ? "m-0 h-8 px-3 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:cursor-pointer"
+                                                : "m-0 h-8 px-3 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-50 hover:cursor-pointer"
+                                        }
                                     >
-                                        {r.label}
+                                        {role.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1">
                             <span className="text-sm font-medium text-slate-600">Tuần bắt đầu</span>
-                            <input
-                                type="date"
-                                value={weekStart}
-                                onChange={(e) => setWeekStart(e.target.value)}
-                                className="hover:cursor-pointer rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 bg-white shadow-sm"
-                            />
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <input
+                                    type="date"
+                                    value={weekStart}
+                                    onChange={(e) => setWeekStart(e.target.value)}
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white shadow-sm h-10"
+                                />
+
                                 <button
                                     onClick={() => shiftWeek(-1)}
                                     className="hover:cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     ← Tuần trước
                                 </button>
+
                                 <button
                                     onClick={() => shiftWeek(1)}
                                     className="hover:cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
@@ -155,18 +210,6 @@ export default function ManageScheduleStaff() {
                                     Tuần sau →
                                 </button>
                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <span className="text-xs font-semibold rounded-full px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                Làm việc: {counts.work}
-                            </span>
-                            <span className="text-xs font-semibold rounded-full px-3 py-1 bg-slate-50 text-slate-700 border border-slate-100">
-                                Nghỉ: {counts.off}
-                            </span>
-                            <span className="text-xs font-semibold rounded-full px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100">
-                                Nghỉ phép: {counts.leave}
-                            </span>
                         </div>
                     </div>
 
@@ -232,24 +275,22 @@ export default function ManageScheduleStaff() {
                             )}
                         </div>
                     </div>
+
                 </main>
+
                 {openDetail && (
                     <div className="fixed inset-0 z-50 flex">
-                        {/* Overlay */}
-                        <div
-                            className="absolute inset-0 bg-black/30"
-                            onClick={() => setOpenDetail(false)}
-                        />
+                        <div className="absolute inset-0 bg-black/30" onClick={() => setOpenDetail(false)} />
 
-                        {/* Drawer */}
                         <div className="relative ml-auto h-full w-[420px] bg-gray-50 shadow-xl overflow-y-auto">
                             <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
-                                <h2 className="font-semibold text-slate-800">
+                                <h2 className="font-semibold">
                                     Chi tiết lịch làm việc
                                 </h2>
+
                                 <button
                                     onClick={() => setOpenDetail(false)}
-                                    className="text-sm text-slate-500 hover:text-slate-700 hover:cursor-pointer"
+                                    className="hover:cursor-pointer text-slate-500"
                                 >
                                     ✕
                                 </button>
@@ -261,8 +302,7 @@ export default function ManageScheduleStaff() {
                         </div>
                     </div>
                 )}
-
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }
