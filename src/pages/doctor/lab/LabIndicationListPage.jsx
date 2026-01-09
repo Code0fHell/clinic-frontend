@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
-import DoctorSidebar from "../components/layout/DoctorSidebar";
+import DoctorTestSidebar from "../components/layout/DoctorTestSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
 import { getTodayLabIndications } from "../../../api/indication.api";
@@ -48,7 +48,7 @@ const LabIndicationListPage = () => {
         <RoleBasedLayout>
             <DoctorHeader />
             <div className="flex h-[calc(100vh-80px)]">
-                <DoctorSidebar />
+                <DoctorTestSidebar />
                 <main className="flex-1 p-8 overflow-auto bg-gray-50">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-6">

@@ -41,3 +41,16 @@ export const getCompletedDiagnosticResults = async () => {
     const res = await axiosClient.get("/imaging/completed");
     return res.data;
 };
+
+export const getCompletedDiagnosticResultsWithFilter = async (params = {}) => {
+    const { filter_type = "all", page = 1, limit = 10 } = params;
+    const res = await axiosClient.get("/imaging/completed", {
+        params: { filter_type, page, limit },
+    });
+    return res.data;
+};
+
+export const getTodayPendingImagingIndications = async () => {
+    const res = await axiosClient.get("/imaging/indications/today/pending");
+    return res.data;
+};
