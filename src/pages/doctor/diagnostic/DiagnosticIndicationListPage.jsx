@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
-import DoctorSidebar from "../components/layout/DoctorSidebar";
+import DoctorImagingSidebar from "../components/layout/DoctorImagingSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
-import { getDiagnosticIndications } from "../../../api/imaging.api";
+import { getTodayPendingImagingIndications } from "../../../api/imaging.api";
 
 const DiagnosticIndicationListPage = () => {
     const navigate = useNavigate();
@@ -17,51 +17,27 @@ const DiagnosticIndicationListPage = () => {
         type: "success",
     });
 
-    // Fetch indications from API
-    useEffect(() => {
-        const fetchIndications = async () => {
-            try {
-                setLoading(true);
-                const data = await getDiagnosticIndications();
-                setIndications(Array.isArray(data) ? data : []);
-            } catch (error) {
-                console.error("Lỗi khi tải danh sách chỉ định:", error);
-                setToast({
-                    show: true,
-                    message:
-                        error?.message ||
-                        "Không thể tải danh sách chỉ định chẩn đoán hình ảnh",
-                    type: "error",
-                });
-                setIndications([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchIndications();
-    }, []);
-
-    const handleRefresh = async () => {
+    const fetchIndications = async () => {
         try {
             setLoading(true);
-            const data = await getDiagnosticIndications();
+            const data = await getTodayPendingImagingIndications();
             setIndications(Array.isArray(data) ? data : []);
-            setToast({
-                show: true,
-                message: "Đã làm mới danh sách",
-                type: "success",
-            });
         } catch (error) {
-            console.error("Lỗi khi làm mới danh sách:", error);
             setToast({
                 show: true,
-                message: error?.message || "Không thể làm mới danh sách",
+                message: "Không thể tải danh sách chỉ định",
                 type: "error",
             });
+            setIndications([]);
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchIndications();
+    }, []);
+
     const handleViewDetail = (indication) => {
         navigate(`/diagnostic/indication/${indication.id}/result`, {
             state: { indication },
@@ -72,17 +48,18 @@ const DiagnosticIndicationListPage = () => {
         <RoleBasedLayout>
             <DoctorHeader />
             <div className="flex h-[calc(100vh-80px)]">
-                <DoctorSidebar />
+                <DoctorImagingSidebar />
                 <main className="flex-1 p-8 overflow-auto bg-gray-50">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-2xl font-bold text-gray-800">
                                 Danh sách bệnh nhân chỉ định chẩn đoán hình ảnh
+                                hôm nay
                             </h1>
                             <button
-                                onClick={handleRefresh}
+                                onClick={fetchIndications}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
                                 disabled={loading}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? "Đang tải..." : "Làm mới"}
                             </button>
@@ -95,7 +72,7 @@ const DiagnosticIndicationListPage = () => {
                         ) : indications.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
                                 Chưa có bệnh nhân nào được chỉ định chẩn đoán
-                                hình ảnh
+                                hình ảnh hôm nay
                             </div>
                         ) : (
                             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -138,18 +115,16 @@ const DiagnosticIndicationListPage = () => {
                                                             8
                                                         )}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        {
-                                                            indication.patient
-                                                                ?.patient_full_name
-                                                        }
+                                                        {indication.patient
+                                                            ?.patient_full_name ||
+                                                            "N/A"}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {
-                                                            indication.patient
-                                                                ?.patient_phone
-                                                        }
+                                                        {indication.patient
+                                                            ?.patient_phone ||
+                                                            "--"}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

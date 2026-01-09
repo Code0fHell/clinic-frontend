@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
-import DoctorSidebar from "../components/layout/DoctorSidebar";
+import DoctorTestSidebar from "../components/layout/DoctorTestSidebar";
 
 const LabDoctorDashBoardPage = () => {
     const navigate = useNavigate();
@@ -19,7 +19,7 @@ const LabDoctorDashBoardPage = () => {
         <RoleBasedLayout>
             <DoctorHeader />
             <div className="flex h-[calc(100vh-80px)]">
-                <DoctorSidebar />
+                <DoctorTestSidebar />
                 <main className="flex-1 p-8 overflow-auto bg-gray-50">
                     <div className="max-w-7xl mx-auto">
                         <h1 className="text-2xl font-bold text-gray-800 mb-6">
@@ -232,39 +232,6 @@ const LabDoctorDashBoardPage = () => {
                                         </p>
                                     </div>
                                 </button>
-                            </div>
-                        </div>
-
-                        {/* Hoạt động gần đây */}
-                        <div className="bg-white rounded-lg shadow p-6">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                                Hoạt động gần đây
-                            </h2>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <p className="text-sm text-gray-700">
-                                        Đã hoàn thành xét nghiệm vi khuẩn lao cho bệnh nhân{" "}
-                                        <span className="font-semibold">Nguyễn Văn An</span>
-                                    </p>
-                                    <span className="ml-auto text-xs text-gray-500">10 phút trước</span>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <p className="text-sm text-gray-700">
-                                        Đã hoàn thành xét nghiệm khí máu cho bệnh nhân{" "}
-                                        <span className="font-semibold">Lê Thị Cẩm</span>
-                                    </p>
-                                    <span className="ml-auto text-xs text-gray-500">25 phút trước</span>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                    <p className="text-sm text-gray-700">
-                                        Nhận phiếu chỉ định mới từ{" "}
-                                        <span className="font-semibold">BS. Trần Thị Bình</span>
-                                    </p>
-                                    <span className="ml-auto text-xs text-gray-500">1 giờ trước</span>
-                                </div>
                             </div>
                         </div>
                     </div>

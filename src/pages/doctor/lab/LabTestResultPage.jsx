@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import RoleBasedLayout from "../../../components/layout/RoleBasedLayout";
 import DoctorHeader from "../components/layout/DoctorHeader";
-import DoctorSidebar from "../components/layout/DoctorSidebar";
+import DoctorTestSidebar from "../components/layout/DoctorTestSidebar";
 import Toast from "../../../components/modals/Toast";
 import { formatUTCDate } from "../../../utils/dateUtils";
 import { createLabTestResult } from "../../../api/lab-test-result.api";
@@ -102,7 +102,7 @@ const LabTestResultPage = () => {
             <RoleBasedLayout>
                 <DoctorHeader />
                 <div className="flex h-[calc(100vh-80px)]">
-                    <DoctorSidebar />
+                    <DoctorTestSidebar />
                     <main className="flex-1 p-8 overflow-auto bg-gray-50 flex items-center justify-center">
                         <div className="text-center">
                             <p className="text-gray-500 mb-4">Không tìm thấy thông tin phiếu chỉ định</p>
@@ -123,7 +123,7 @@ const LabTestResultPage = () => {
         <RoleBasedLayout>
             <DoctorHeader />
             <div className="flex h-[calc(100vh-80px)]">
-                <DoctorSidebar />
+                <DoctorTestSidebar />
                 <main className="flex-1 p-8 overflow-auto bg-gray-50">
                     <div className="max-w-5xl mx-auto">
                         <div className="flex justify-between items-center mb-6">
